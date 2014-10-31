@@ -65,7 +65,8 @@ class QuadTree:
 	def __init__(self, coord, data = None):
 		self.prev_entry = None
 		self.next_tree = None
-		
+		self.current_radius = QUAD_RADIUS
+	
 		top_left = self.getNewTopLeft( coord, QUAD_RADIUS )
 		bottom_right = self.getNewBottomRight( coord, QUAD_RADIUS )
 
@@ -119,7 +120,8 @@ class QuadTree:
 			sys.exit(1)
 		# NOT IN QUAD
 		elif( which_quad == -1 ):
-			return -1
+			enlargeQuadTree( coord )
+			return self.addCoord( coord, quad, radius, data )
 		# NE
 		elif( which_quad == 1 ):
 			if( quad.ne == None ):
@@ -144,6 +146,62 @@ class QuadTree:
 			if( quad.nw == None ):
 				quad.nw = Quad( quad, quad.top_left, mid_point )
 			return self.addCoord( coord, quad.nw, (radius / 2), data )			
+
+	def enlargeQuadTree( self, coord ):
+		exterior_quadrant = self.getQuadrantForExteriorCoord( coord )
+
+		new_root_top_left = None
+		new_root_bottom_right = None
+
+		new_root = None
+
+		self.current_radius *= 2
+
+		if(exterior_quadrant == 1):
+			new_root_top_left = self.getGPSCoordByDirectionAndCourse( self.root.top_left, self.current_radius, 0 )		
+			new_root_bottom_right = self.getGPSCoordByDirectionAndCourse( self.root.bottom_right, self.current_radius, 90 )
+			new_root = Quad( None, new_root_top_left, new_root_top_right )
+			new_root.sw = self.root
+		elif(exterior_quadrant == 2):
+			new_root_top_left = self.root.top_left
+			new_lat = self.getGPSCoordByDirectionAndCourse( self.root.bottom_right, self.current_radius, 90).longitude
+			new_long = self.getGPSCoordByDirectionAndCourse( self.root.bottom_right, self.current_radius, 180).latitude
+			new_root_bottom_right = GPSCoord( new_lat, new_long )
+			new_root = Quad(None, new_root_top_left, new_root_top_right )
+			new_root.nw = self.root
+		elif(exterior_quadrant == 3):
+			new_root_top_left = self.getGPSCoordByDirectionAndCourse( self.root.top_left, self.current_radius, 270)
+			new_root_bottom_right = self.getGPSCoordByDirectionAndCourse( self.root.bottom_right, self.current_radius, 90)
+			new_root.ne = self.root
+		elif(exterior_quadrant == 4):
+			new_lat = self.getGPSCoordByDirectionAndCourse( self.root.top_left, self.current_radius, 0).latitude
+			new_long = self.getGPSCoordByDirectionAndCourse( self.root.top_left, self.current_radius, 270).longitude
+			new_root_top_left = GPSCoord( new_lat, new_long )
+			new_root_bottom_right = self.root.bottom_right
+			new_root.se = self.root
+		elif(exterior_quadrant == -1):
+			return -2 # MAJOR FUCKING ERROR
+		else:
+			return -2 # MAJOR FUCKING ERROR
+		
+		# Reparent old root
+		self.root.parent = new_root
+		# Swap roots
+		self.root = new_root
+
+	def getQuadrantForExteriorCoord( self, coord ):
+		midpoint = self.getMidPoint( self.root )
+
+		if( coord.latitude > midpoint.latitude and coord.longitude >= midpoint.longitude ):
+			return 1
+		elif( coord.latitude <= midpoint.latitude and coord.longitude >= midpoint.longitude ):
+			return 2
+		elif( coord.latitude <= midpoint.latitude and coord.longitude < midpoint.longitude ):
+			return 3
+		elif( coord.latitude > midpoint.latitude and coord.longitude < midpoint.longitude ):
+			return 4
+		else:
+			return -1
 
 	def toDegrees( self, radians ):
 		return radians * 180.0 / PI
@@ -198,6 +256,9 @@ class QuadTree:
 		new_right = self.getGPSCoordByDirectionAndCourse( coord, radius, 90.0 )
 
 		return GPSCoord( new_bottom.latitude, new_right.longitude )
+
+	def getMidPoint( self, quad ):
+		return self.getMidPoint( quad.top_left, quad.bottom_right )
 
 	def getMidPoint( self, top_left, bottom_right ):
 		mid_lat = ( (top_left.latitude - bottom_right.latitude) / 2.0 ) + \
