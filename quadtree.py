@@ -1,8 +1,8 @@
 # QUAD TREE version 1.0
-
 import math
 import pickle
 import sys
+import alignment
 
 MINUTES_TO_METERS = 1852.0
 DEGREES_TO_MINUTES = 60.0
@@ -18,6 +18,9 @@ class Profile:
 		self.first_name = first_name
 		self.last_name = last_name
 		self.trees = QuadTree(coord, data)
+
+		self.day_dodem = alignment.Alignment()
+		self.time_dodem = alignment.Alignment()
 
 	@classmethod
 	def load(cls, filename):
