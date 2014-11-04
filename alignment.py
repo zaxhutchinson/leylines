@@ -1,11 +1,11 @@
 # Alignment: where multiple ley lines come together
 from collections import defaultdict
+import datetime
+import time
 
-class Alignment:
+class Dodman:
 	def __init__(self):
 		self.alignments = defaultdict(list)
-		self.min_key = None
-		self.max_key = None
 
 	def getAlignment(self, key):
 		if key in self.alignments:
@@ -18,11 +18,49 @@ class Alignment:
 			if( key >= self.min_key and key <= self.max_key ):
 				self.alignments.get(key).append(megalith)
 			else:
+				# Error, key is outside min max.
 				return -1
 		else:
-			None
-			# Probably update preexisting megalith
+			# Already exists as an alignment, so just 
+			self.alignments.get(key).visits += 1
 
-class Megalith:
+
+class TimeDodman(Dodman):
+	def __init__(self, time_block):
+		Dodman.__init__()
+		self.time_block = time_block
+
+	# Conversion helper function: takes a time stamp saved in a quad
+	# and returns the hour and minute block in military time.
+	# E.G.: 1:31 PM will return 132 if time_block is set to 15 minutes
+	#
+	def convertTimeToKey(self, time):
+		dt = datetime.datetime.fromtimestamp(time)
+		t = dt.time()
+		hour = t.hour * 100
+		min_block = int(t.minute / self.time_block)
+		return hour + min_block
+
+class DateDodman(Dodman):
 	def __init__(self):
-		self.quad = None
+		Dodman.__init__()
+	
+	# Conversion helper: returns day of the week
+	# MON: 0, SUN: 6
+	def convertTimeToKey(self, time):
+		dt = datetime.datetime.fromtimestamp(time)
+		return dt.weekday()
+
+
+
+# NOTE: I think this is a necessary abstraction from simply storing the quad
+#	for the reason that a quad can be stored multiple times in an alignment
+#	if the key is different.
+#
+# NOTE: Visits start presently at two because you must visit a quad
+#	at least twice with the same key in order for it to be considered
+#	an alignment.
+class Megalith:
+	def __init__(self, quad):
+		self.quad = quad
+		self.visits = 2

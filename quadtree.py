@@ -13,14 +13,18 @@ QUAD_MIN = 2**5
 PI = 3.14159265358979323846264338327
 
 class Profile:
-	def __init__(self, uid, first_name, last_name, coord, data):
+	def __init__(self, uid, first_name, last_name, coord, data, time_block):
 		self.uid = uid
 		self.first_name = first_name
 		self.last_name = last_name
-		self.trees = QuadTree(coord, data)
+		self.tree = QuadTree(coord, data)
 
-		self.day_dodem = alignment.Alignment()
-		self.time_dodem = alignment.Alignment()
+		self.time_block = time_block
+
+		# 1 = Sunday, 7 = Saturday
+		self.dodman_of_day = alignment.Dodman()
+		# Military time: format 0000 = midnight to midnight+time_block
+		self.dodman_of_time = alignment.Dodman()
 
 	@classmethod
 	def load(cls, filename):
@@ -32,8 +36,11 @@ class Profile:
 		pickle.dump(self, output_file)
 		output_file.close()
 
+# Time is a stored as a single integer type which must be converted into
+# a datetime object in order to extract information.
 class Data:
-	def __init__(self, new_info):
+	def __init__(self, time, new_info):
+		self.time = time
 		self.info = new_info
 		self.location = None
 		self.prev_entry = None
@@ -67,8 +74,8 @@ class QuadTree:
 		self.next_tree = None
 		self.current_radius = QUAD_RADIUS
 	
-		top_left = self.getNewTopLeft( coord, QUAD_RADIUS )
-		bottom_right = self.getNewBottomRight( coord, QUAD_RADIUS )
+		top_left = self.getNewTopLeft( coord, self.current_radius )
+		bottom_right = self.getNewBottomRight( coord, self.current_radius )
 
 		self.root = Quad( None, top_left, bottom_right )
 
@@ -77,7 +84,7 @@ class QuadTree:
 		# self.root.bottom_right.display()
 		##############
 
-		result = self.addCoord( coord, self.root, QUAD_RADIUS, data )
+		result = self.addCoord( coord, self.root, self.current_radius, data )
 
 		if( result != 0 ):
 			print 'ERROR: creating quad tree. Exiting.'
@@ -93,7 +100,7 @@ class QuadTree:
 		
 		tree = self
 
-		while( self.addCoord( new_coord, tree.root, QUAD_RADIUS, data ) != 0 ):
+		while( self.addCoord( new_coord, tree.root, self.current_radius, data ) != 0 ):
 			if( tree.next_tree == None ):
 				tree.next_tree = QuadTree( new_coord, data )
 			else:
@@ -297,6 +304,33 @@ class QuadTree:
 		# ERROR
 		else:
 			return -2
+"""
+	def getClosestSafeQuad(self, quad):
+		
+		# Which quad am I in relation to my siblings
+		relation = self.relationToSibling(quad)
+
+	def findNorthEastNeighbor(self, quad):
+		relation = self.relationToSibling(quad)
+
+		if( relation == 2 ): #se
+			return quad.parent.ne
+		elif( relation == 3 ): #sw
+			return quad.parent.nw
+"""
+	def relationToSiblings(self, quad):
+		parent = quad.parent
+
+		if (parent.ne == quad):
+			return 1
+		elif (parent.se == quad):
+			return 2
+		elif (parent.sw == quad):
+			return 3
+		elif (parent.nw == quad):
+			return 4
+		else
+			return -1
 
 	def printTree( self, root, level=0 ):
 		if(root != None):
