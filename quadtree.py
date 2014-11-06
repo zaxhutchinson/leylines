@@ -12,6 +12,23 @@ QUAD_RADIUS = 2**15
 QUAD_MIN = 2**5
 PI = 3.14159265358979323846264338327
 
+one_quad = { 	'NW':3, 'N':2, 'NE':3,
+		'W':4, 		'E':4,
+		'SW':3, 'S':2, 'SE':3 }
+
+two_quad = {	'NW':4, 'N':1, 'NE':4,
+		'W':3,		'E':3,
+		'SW':4, 'S':1, 'SE':4 }
+
+three_quad = {	'NW':1, 'N':4, 'NE':1,
+		'W':2,		'E':2,
+		'SW':1, 'S':4, 'SE':1 }
+
+four_quad = {	'NW':2, 'N':3, 'NE':2,
+		'W':1,		'E':1,
+		'SW':2, 'S':3, 'SE':2 } 
+
+
 class Profile:
 	def __init__(self, uid, first_name, last_name, coord, data, time_block):
 		self.uid = uid
@@ -275,6 +292,9 @@ class QuadTree:
 
 		return GPSCoord( mid_lat, mid_long )
 
+	def getQuadForGPSCoord( self, coord, quad ):
+		return getQuadForGPSCoord( coord, quad.top_left, quad.bottom_right )
+
 	def getQuadForGPSCoord( self, coord, top_left, bottom_right ):
 		mid_point = self.getMidPoint( top_left, bottom_right )
 
@@ -304,12 +324,87 @@ class QuadTree:
 		# ERROR
 		else:
 			return -2
-"""
-	def getClosestSafeQuad(self, quad):
+
+	def getAddressOfQuad(self, quad, address):
 		
 		# Which quad am I in relation to my siblings
-		relation = self.relationToSibling(quad)
+		address.append(self.relationToParent(quad))
 
+		if(quad.parent == None):
+			return address
+
+		else:
+			return getAddressOfQuad(quad.parent, address)
+
+	def getListOfClosestGoodQuads(self, quad, segments, radius, good_quads):
+		segments_in_degrees = 360.0 / segments
+
+		d = 0.0
+
+		while(d < 360.0):
+			tmp_coord = getGPSCoordByDirectionAndCourse( coord, radius, d )
+
+			containing_quad = None
+
+			if( isPointInTree(tmp_coord, containing_quad) ):
+				if(containing_quad != None):
+					good_quads.append(containing_quad)
+				else:
+					return nil
+			
+			d = d + segments_in_degrees
+
+
+		if(len(good_quads) == 0):
+
+			if(radius < self.current_radius):
+				return getListOfClosestGoodQuads(quad, (segments * 2), (radius * 2), good_quads)
+			else:
+				return nil # TREE IS FUCKING EMPTY...SOMEHOW
+
+		else: # We have something in the list.
+			return true
+
+
+				
+				
+
+	def isPointInTree(self, coord, container_quad):
+		
+		return self.isPointInTree(coord, self.root, self.current_radius, container_quad)
+
+	def isPointInTree(self, coord, quad, radius):
+		subquad = getGPSCoordForCoord(coord, quad)
+
+		if(radius == QUAD_MIN):
+			container_quad = quad
+			return true
+
+		if(subquad == 1):
+			if(quad.ne != None):
+				isPointInTree(coord, quad.ne, radius / 2, container_quad)
+			else:
+				return nil
+		elif(subquad == 2):
+			if(quad.se != None):
+				isPointInTree(coord, quad.se, radius / 2, container_quad)
+			else:
+				return nil
+		elif(subquad == 3):
+			if(quad.sw != None):
+				isPointInTree(coord, quad.sw, radius / 2, container_quad)
+			else:
+				return nil
+		elif(subquad == 4):	
+			if(quad.nw != None):
+				isPointInTree(coord, quad.nw, radius / 2, container_quad)
+			else:
+				return nil
+		else:
+			return nil
+		
+
+"""
 	def findNorthEastNeighbor(self, quad):
 		relation = self.relationToSibling(quad)
 
@@ -318,7 +413,8 @@ class QuadTree:
 		elif( relation == 3 ): #sw
 			return quad.parent.nw
 """
-	def relationToSiblings(self, quad):
+	# Returns an int giving a quad's relationship to its parent
+	def relationToParent(self, quad):
 		parent = quad.parent
 
 		if (parent.ne == quad):
