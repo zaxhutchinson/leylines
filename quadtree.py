@@ -28,7 +28,6 @@ four_quad = {	'NW':2, 'N':3, 'NE':2,
 		'W':1,		'E':1,
 		'SW':2, 'S':3, 'SE':2 } 
 
-
 class Profile:
 	def __init__(self, uid, first_name, last_name, coord, data, time_block):
 		self.uid = uid
@@ -336,36 +335,36 @@ class QuadTree:
 		else:
 			return getAddressOfQuad(quad.parent, address)
 
-	def getListOfClosestGoodQuads(self, quad, segments, radius, good_quads):
-		segments_in_degrees = 360.0 / segments
+	def getClosestGoodQuad(self, coord, quad, radius):
+		
+		
+		ne_mid = None
+		se_mid = None
+		sw_mid = None
+		nw_mid = None
 
-		d = 0.0
+		dist_ne = None
+		dist_se = None
+		dist_sw = None
+		dist_nw = None
 
-		while(d < 360.0):
-			tmp_coord = getGPSCoordByDirectionAndCourse( coord, radius, d )
+		dist_min = None
 
-			containing_quad = None
+		if( quad.ne != None ):
+			ne_mid = self.getMidPoint( quad.ne )
+			dist_ne = self.distanceBetweenTwoPoints( coord, ne_mid )
+		if( quad.se != None ):
+			se_mid = self.getMidPoint( quad.se )
+			dist_se = self.distanceBetweenTwoPoints( coord, se_mid )
+		if( quad.sw != None ):
+			sw_mid = self.getMidPoint( quad.sw )
+			dist_sw = self.distanceBetweenTwoPoints( coord, sw_mid )
+		if( quad.nw != None ):
+			nw_mid = self.getMidPoint( quad.nw )
+			dist_nw = self.distanceBetweenTwoPoints( coord, nw_mid )
 
-			if( isPointInTree(tmp_coord, containing_quad) ):
-				if(containing_quad != None):
-					good_quads.append(containing_quad)
-				else:
-					return nil
-			
-			d = d + segments_in_degrees
-
-
-		if(len(good_quads) == 0):
-
-			if(radius < self.current_radius):
-				return getListOfClosestGoodQuads(quad, (segments * 2), (radius * 2), good_quads)
-			else:
-				return nil # TREE IS FUCKING EMPTY...SOMEHOW
-
-		else: # We have something in the list.
-			return true
-
-
+		if( 
+		
 				
 				
 
