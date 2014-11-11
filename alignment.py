@@ -3,27 +3,28 @@ from collections import defaultdict
 import datetime
 import time
 
+MIN_VISITS_TO_CREATE_MEGALITH = 2
+
 class Dodman:
 	def __init__(self):
 		self.alignments = defaultdict(list)
 
 	def getAlignment(self, key):
-		if key in self.alignments:
-			return self.alignments.get(key)
+		k = self.parseKey(key)
+		if k in self.alignments.keys():
+			return self.alignments.get(k)
 		else:
 			return None
-
-	def addAlignment(self, key, megalith):
-		if megalith not in self.alignments.get(key):
-			if( key >= self.min_key and key <= self.max_key ):
-				self.alignments.get(key).append(megalith)
-			else:
-				# Error, key is outside min max.
-				return -1
-		else:
-			# Already exists as an alignment, so just 
-			self.alignments.get(key).visits += 1
-
+	
+	def parseKey(self, key):
+		return key
+	
+	def addQuad(self, key, quad):
+		for k,v in self.alignments.items():
+			if( v.quad == quad ):
+				v.visits += 1
+				return True
+		self.alignments[self.parseKey(key)] = Megalith(quad)
 
 class TimeDodman(Dodman):
 	def __init__(self, time_block):
@@ -34,8 +35,8 @@ class TimeDodman(Dodman):
 	# and returns the hour and minute block in military time.
 	# E.G.: 1:31 PM will return 132 if time_block is set to 15 minutes
 	#
-	def convertTimeToKey(self, time):
-		dt = datetime.datetime.fromtimestamp(time)
+	def parseKey(self, key):
+		dt = datetime.datetime.fromtimestamp(key)
 		t = dt.time()
 		hour = t.hour * 100
 		min_block = int(t.minute / self.time_block)
@@ -47,8 +48,8 @@ class DateDodman(Dodman):
 	
 	# Conversion helper: returns day of the week
 	# MON: 0, SUN: 6
-	def convertTimeToKey(self, time):
-		dt = datetime.datetime.fromtimestamp(time)
+	def parseKey(self, key):
+		dt = datetime.datetime.fromtimestamp(key)
 		return dt.weekday()
 
 
@@ -63,4 +64,4 @@ class DateDodman(Dodman):
 class Megalith:
 	def __init__(self, quad):
 		self.quad = quad
-		self.visits = 2
+		self.visits = MIN_VISITS_TO_CREATE_MEGALITH

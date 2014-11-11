@@ -12,35 +12,12 @@ QUAD_RADIUS = 2**15
 QUAD_MIN = 2**5
 PI = 3.14159265358979323846264338327
 
-one_quad = { 	'NW':3, 'N':2, 'NE':3,
-		'W':4, 		'E':4,
-		'SW':3, 'S':2, 'SE':3 }
-
-two_quad = {	'NW':4, 'N':1, 'NE':4,
-		'W':3,		'E':3,
-		'SW':4, 'S':1, 'SE':4 }
-
-three_quad = {	'NW':1, 'N':4, 'NE':1,
-		'W':2,		'E':2,
-		'SW':1, 'S':4, 'SE':1 }
-
-four_quad = {	'NW':2, 'N':3, 'NE':2,
-		'W':1,		'E':1,
-		'SW':2, 'S':3, 'SE':2 } 
-
 class Profile:
-	def __init__(self, uid, first_name, last_name, coord, data, time_block):
+	def __init__(self, uid, first_name, last_name, coord, time_block, data):
 		self.uid = uid
 		self.first_name = first_name
 		self.last_name = last_name
-		self.tree = QuadTree(coord, data)
-
-		self.time_block = time_block
-
-		# 1 = Sunday, 7 = Saturday
-		self.dodman_of_day = alignment.Dodman()
-		# Military time: format 0000 = midnight to midnight+time_block
-		self.dodman_of_time = alignment.Dodman()
+		self.tree = QuadTree(coord, time_block, data)
 
 	@classmethod
 	def load(cls, filename):
@@ -85,7 +62,7 @@ class Quad:
 
 
 class QuadTree:
-	def __init__(self, coord, data = None):
+	def __init__(self, coord, time_block, data = None):
 		self.prev_entry = None
 		self.next_tree = None
 		self.current_radius = QUAD_RADIUS
@@ -94,6 +71,15 @@ class QuadTree:
 		bottom_right = self.getNewBottomRight( coord, self.current_radius )
 
 		self.root = Quad( None, top_left, bottom_right )
+
+
+		self.time_block = time_block
+
+		# 1 = Sunday, 7 = Saturday
+		self.dodman_of_day = alignment.DateDodman()
+		# Military time: format 0000 = midnight to midnight+time_block
+		self.dodman_of_time = alignment.TimeDodman()
+
 
 		# DEBUG CODE #
 		# self.root.top_left.display()
@@ -110,6 +96,8 @@ class QuadTree:
 
 	def addData(self, quad, data):
 		quad.data.append(data)
+		if( len(quad.data) >= MIN_VISITS_TO_CREATE_MEGALITH ):
+			self.dodman_of_time.add
 		return
 
 	def updateQuadTree( self, new_coord, data ):
@@ -291,6 +279,11 @@ class QuadTree:
 
 		return GPSCoord( mid_lat, mid_long )
 
+	def getRadiusOfQuad( self, quad ):
+		top_right = GPSCoord( quad.top_left.latitude, quad.bottom_right.longitude )
+
+		return self.distanceBetweenTwoPoints( quad.top_left, top_right )
+
 	def getQuadForGPSCoord( self, coord, quad ):
 		return getQuadForGPSCoord( coord, quad.top_left, quad.bottom_right )
 
@@ -324,49 +317,60 @@ class QuadTree:
 		else:
 			return -2
 
-	def getAddressOfQuad(self, quad, address):
+	def getClosestGoodQuad(self, coord ):
 		
-		# Which quad am I in relation to my siblings
-		address.append(self.relationToParent(quad))
-
-		if(quad.parent == None):
-			return address
-
-		else:
-			return getAddressOfQuad(quad.parent, address)
-
-	def getClosestGoodQuad(self, coord, quad, radius):
+		# The list of current candidates for closest good quad
+		open_list = []
 		
-		
-		ne_mid = None
-		se_mid = None
-		sw_mid = None
-		nw_mid = None
+		# Current closest quad
+		closest_quad = None
+		closest_quad_dist = None
+		closest_quad_radius = None
 
-		dist_ne = None
-		dist_se = None
-		dist_sw = None
-		dist_nw = None
+		# Add the root's children to the open list.
+		if( self.root.ne != None ):
+			open_list.append(self.root.ne)
+		if( self.root.se != None ):
+			open_list.append(self.root.se)
+		if( self.root.sw != None ):
+			open_list.append(self.root.sw)
+		if( self.root.nw != None ):
+			open_list.append(self.root.nw)
 
-		dist_min = None
+		while( True ):
 
-		if( quad.ne != None ):
-			ne_mid = self.getMidPoint( quad.ne )
-			dist_ne = self.distanceBetweenTwoPoints( coord, ne_mid )
-		if( quad.se != None ):
-			se_mid = self.getMidPoint( quad.se )
-			dist_se = self.distanceBetweenTwoPoints( coord, se_mid )
-		if( quad.sw != None ):
-			sw_mid = self.getMidPoint( quad.sw )
-			dist_sw = self.distanceBetweenTwoPoints( coord, sw_mid )
-		if( quad.nw != None ):
-			nw_mid = self.getMidPoint( quad.nw )
-			dist_nw = self.distanceBetweenTwoPoints( coord, nw_mid )
+			for q in open_list:
 
-		if( 
-		
+				q_mid = self.getMidPoint(q)
+				q_dist = self.distanceBetweenTwoPoints( q_mid, coord )
+
+				if( closest_quad_dist == None or q_dist < closest_quad_dist ):
+
+					closest_quad = q
+					closest_quad_dist = q_dist
 				
+			# If closest_quad's radius is <= QUAD_MIN, break, we have a leaf-level
+			# quad. 
+			if( self.getRadiusOfQuad( closest_quad ) <= QUAD_MIN ):
 				
+				break
+
+			# Else add all the closest_quad's children to the open list.
+			# And remove the closest quad from the list. 
+			else:
+				if( closest_quad.ne != None ):
+					open_list.append( closest_quad.ne )
+				if( closest_quad.se != None ):
+					open_list.append( closest_quad.se )
+				if( closest_quad.sw != None ):
+					open_list.append( closest_quad.sw )
+				if( closest_quad.nw != None ):
+					open_list.append( closest_quad.nw )
+
+				open_list.remove( closest_quad )
+
+
+		return closest_quad
 
 	def isPointInTree(self, coord, container_quad):
 		
@@ -377,7 +381,7 @@ class QuadTree:
 
 		if(radius == QUAD_MIN):
 			container_quad = quad
-			return true
+			return True
 
 		if(subquad == 1):
 			if(quad.ne != None):
@@ -401,17 +405,7 @@ class QuadTree:
 				return nil
 		else:
 			return nil
-		
 
-"""
-	def findNorthEastNeighbor(self, quad):
-		relation = self.relationToSibling(quad)
-
-		if( relation == 2 ): #se
-			return quad.parent.ne
-		elif( relation == 3 ): #sw
-			return quad.parent.nw
-"""
 	# Returns an int giving a quad's relationship to its parent
 	def relationToParent(self, quad):
 		parent = quad.parent
