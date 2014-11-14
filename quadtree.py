@@ -32,7 +32,7 @@ class Profile:
 # Time is a stored as a single integer type which must be converted into
 # a datetime object in order to extract information.
 class Data:
-	def __init__(self, time, new_info):
+	def __init__(self, time, new_info=None):
 		self.time = time
 		self.info = new_info
 		self.location = None
