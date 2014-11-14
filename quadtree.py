@@ -80,12 +80,6 @@ class QuadTree:
 		# Military time: format 0000 = midnight to midnight+time_block
 		self.dodman_of_time = alignment.TimeDodman()
 
-
-		# DEBUG CODE #
-		# self.root.top_left.display()
-		# self.root.bottom_right.display()
-		##############
-
 		result = self.addCoord( coord, self.root, self.current_radius, data )
 
 		if( result != 0 ):
