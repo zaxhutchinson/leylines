@@ -84,22 +84,39 @@ def test():
 	f = open('times.txt', 'r')
 	for line in f:
 		z_times.append(line.rstrip())
-
+	
+	"""
 	for i in range(0,100):
 		lat_noise = random.uniform(-0.01, 0.01)	
 		long_noise = random.uniform(-0.01, 0.01)
 
 		z_locs.append( quadtree.GPSCoord( (z_home.latitude + lat_noise), (z_home.longitude + long_noise) ) )
 
+	f.close()
+	"""
+
+	f = open('gps1.txt', 'r')
+
+	for line in f:
+		gps = line.split(',')
+		lat = gps[0].rstrip()
+		lon = gps[1].rstrip()
+
+		z_locs.append( quadtree.GPSCoord( float(lat), float(lon) ) )
+
+	f.close()
+
+
 	# CREATE NEW PROFILE
 	zax_profile = quadtree.Profile(z_uid, z_fname, z_lname, z_home, z_data)
 	
 	# Create data objects and add to tree
-	for i in range(0,99):
+	for i in range(0,len(z_locs)):
 
 		d = quadtree.Data( z_times[i] ) 
 
 		zax_profile.addNewData( z_locs[i], d )
+
 
 	# SAVE IT
 	zax_profile.save()
