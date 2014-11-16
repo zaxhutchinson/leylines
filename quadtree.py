@@ -3,21 +3,14 @@ import math
 import pickle
 import sys
 import alignment
-
-MINUTES_TO_METERS = 1852.0
-DEGREES_TO_MINUTES = 60.0
-EARTH_RADIUS = 6371000
-QUAD_DIAMETER = 2**16
-QUAD_RADIUS = 2**15
-QUAD_MIN = 2**5
-PI = 3.14159265358979323846264338327
+import config
 
 class Profile:
-	def __init__(self, uid, first_name, last_name, coord, time_block, data):
+	def __init__(self, uid, first_name, last_name, coord, data):
 		self.uid = uid
 		self.first_name = first_name
 		self.last_name = last_name
-		self.tree = QuadTree(coord, time_block, data)
+		self.tree = QuadTree(coord, data)
 
 	@classmethod
 	def load(cls, filename):
@@ -29,8 +22,9 @@ class Profile:
 		pickle.dump(self, output_file)
 		output_file.close()
 
-# Time is a stored as a single integer type which must be converted into
-# a datetime object in order to extract information.
+	def addNewData( self, coord, data ):
+		return self.tree.addNewData( coord, data )
+		
 class Data:
 	def __init__(self, time, new_info=None):
 		self.time = time
@@ -62,18 +56,15 @@ class Quad:
 
 
 class QuadTree:
-	def __init__(self, coord, time_block, data = None):
+	def __init__(self, coord, data = None):
 		self.prev_entry = None
 		self.next_tree = None
-		self.current_radius = QUAD_RADIUS
+		self.current_radius = config.QUAD_RADIUS
 	
 		top_left = self.getNewTopLeft( coord, self.current_radius )
 		bottom_right = self.getNewBottomRight( coord, self.current_radius )
 
 		self.root = Quad( None, top_left, bottom_right )
-
-
-		self.time_block = time_block
 
 		# 1 = Sunday, 7 = Saturday
 		self.dodman_of_day = alignment.DateDodman()
@@ -90,8 +81,9 @@ class QuadTree:
 
 	def addData(self, quad, data):
 		quad.data.append(data)
-		if( len(quad.data) >= MIN_VISITS_TO_CREATE_MEGALITH ):
-			self.dodman_of_time.add
+		if( len(quad.data) >= config.MIN_VISITS_TO_CREATE_MEGALITH ):
+			self.dodman_of_time.addQuad(data.time, quad)
+			self.dodman_of_day.addQuad(data.time, quad)
 		return
 
 	def updateQuadTree( self, new_coord, data ):
@@ -104,9 +96,12 @@ class QuadTree:
 			else:
 				tree = tree.next_tree
 
+	def addNewData(self, coord, data):
+		return self.addCoord( coord, self.root, config.QUAD_RADIUS, data)
+
 	def addCoord(self, coord, quad, radius, data):
 
-		if(radius <= QUAD_MIN):
+		if(radius <= config.QUAD_MIN):
 			if(data != None):
 				data.location = quad
 				data.prev_entry = self.prev_entry
@@ -209,10 +204,10 @@ class QuadTree:
 			return -1
 
 	def toDegrees( self, radians ):
-		return radians * 180.0 / PI
+		return radians * 180.0 / config.PI
 
 	def toRadians( self, degrees ):
-		return degrees * PI / 180.0
+		return degrees * config.PI / 180.0
 
 	def distanceBetweenTwoPoints( self, GPSone, GPStwo ):
 		lat1 = self.toRadians(GPSone.latitude)
@@ -229,12 +224,12 @@ class QuadTree:
 
 		beta = 2 * math.atan2( math.sqrt(alpha), math.sqrt(1 - alpha) )
 
-		return EARTH_RADIUS * beta
+		return config.EARTH_RADIUS * beta
 
 	def getGPSCoordByDirectionAndCourse( self, coord, distance, course ):
 		course_in_radians = math.radians( course )
-		distance_in_radians = math.radians( distance / MINUTES_TO_METERS /
-												DEGREES_TO_MINUTES )
+		distance_in_radians = math.radians( distance / config.MINUTES_TO_METERS /
+												config.DEGREES_TO_MINUTES )
 
 		lat1 = math.radians( coord.latitude )
 		long1 = math.radians( coord.longitude )
@@ -246,7 +241,7 @@ class QuadTree:
 								math.cos(lat1),
 								math.cos(distance_in_radians) -
 								math.sin(lat1) * math.sin(new_lat) )
-		new_long = math.fmod( (long1 + temp_long + PI), (2.0 * PI) )- PI
+		new_long = math.fmod( (long1 + temp_long + config.PI), (2.0 * config.PI) )- config.PI
 		
 		return GPSCoord( math.degrees(new_lat), math.degrees(new_long) )
 
@@ -412,7 +407,7 @@ class QuadTree:
 			return 3
 		elif (parent.nw == quad):
 			return 4
-		else
+		else:
 			return -1
 
 	def printTree( self, root, level=0 ):
@@ -430,3 +425,16 @@ class QuadTree:
 			self.printTree(root.se, level+1)
 			self.printTree(root.sw, level+1)
 			self.printTree(root.nw, level+1)
+
+	def getLengthInNumberOfPossibleMinimalQuads(self):
+		# NEED the + 1 because it's inclusive.
+		return 2**((config.RADIUS_EXP - config.MIN_EXP)+1)
+
+
+
+
+
+
+
+
+		

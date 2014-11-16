@@ -2,8 +2,7 @@
 from collections import defaultdict
 import datetime
 import time
-
-MIN_VISITS_TO_CREATE_MEGALITH = 2
+import config
 
 class Dodman:
 	def __init__(self):
@@ -27,29 +26,28 @@ class Dodman:
 		self.alignments[self.parseKey(key)] = Megalith(quad)
 
 class TimeDodman(Dodman):
-	def __init__(self, time_block):
-		Dodman.__init__()
-		self.time_block = time_block
+	def __init__(self):
+		Dodman.__init__(self)
 
 	# Conversion helper function: takes a time stamp saved in a quad
 	# and returns the hour and minute block in military time.
 	# E.G.: 1:31 PM will return 132 if time_block is set to 15 minutes
 	#
 	def parseKey(self, key):
-		dt = datetime.datetime.fromtimestamp(key)
+		dt = datetime.datetime.fromtimestamp(float(key))
 		t = dt.time()
 		hour = t.hour * 100
-		min_block = int(t.minute / self.time_block)
+		min_block = int(t.minute / config.TIME_BLOCK)
 		return hour + min_block
 
 class DateDodman(Dodman):
 	def __init__(self):
-		Dodman.__init__()
+		Dodman.__init__(self)
 	
 	# Conversion helper: returns day of the week
 	# MON: 0, SUN: 6
 	def parseKey(self, key):
-		dt = datetime.datetime.fromtimestamp(key)
+		dt = datetime.datetime.fromtimestamp(float(key))
 		return dt.weekday()
 
 
@@ -64,4 +62,4 @@ class DateDodman(Dodman):
 class Megalith:
 	def __init__(self, quad):
 		self.quad = quad
-		self.visits = MIN_VISITS_TO_CREATE_MEGALITH
+		self.visits = config.MIN_VISITS_TO_CREATE_MEGALITH
