@@ -1,4 +1,3 @@
-
 MINUTES_TO_METERS = 1852.0
 DEGREES_TO_MINUTES = 60.0
 EARTH_RADIUS = 6371000
@@ -13,3 +12,10 @@ PI = 3.14159265358979323846264338327
 MIN_VISITS_TO_CREATE_MEGALITH = 2
 
 TIME_BLOCK = 15
+
+########################################
+### DO NOT CHANGE VALUES ONCE IN USE ###
+MSG_AWK = 0
+MSG_DATA = 1
+MSG_PREF = 2
+########################################
