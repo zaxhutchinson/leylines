@@ -120,7 +120,7 @@ class QuadTree:
 			sys.exit(1)
 		# NOT IN QUAD
 		elif( which_quad == -1 ):
-			enlargeQuadTree( coord )
+			self.enlargeQuadTree( coord )
 			return self.addCoord( coord, quad, radius, data )
 		# NE
 		elif( which_quad == 1 ):
@@ -428,7 +428,7 @@ class QuadTree:
 
 	def getLengthInNumberOfPossibleMinimalQuads(self):
 		# NEED the + 1 because it's inclusive.
-		return 2**((config.RADIUS_EXP - config.MIN_EXP)+1)
+		return 2**((config.RADIUS_EXP - config.MIN_EXP))
 
 
 

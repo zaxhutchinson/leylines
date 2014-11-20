@@ -5,6 +5,7 @@ import time
 import datetime
 import random
 import config
+import sys
 
 #from tkinter import *
 #from tkinter import ttk
@@ -44,7 +45,7 @@ def drawQuadTree(profile):
 	im = Image.new("RGB", (length,length), "black")
 	draw = ImageDraw.Draw(im)
 
-	exp = (config.RADIUS_EXP - config.MIN_EXP) + 1
+	exp = (config.RADIUS_EXP - config.MIN_EXP)
 
 	clockwiseDraw( profile.tree.root, exp, 0, 0, draw )
 
@@ -52,27 +53,60 @@ def drawQuadTree(profile):
 	im.save(profile.uid + ".png")
 
 def clockwiseDraw(quad, exp, x, y, draw):
-	
+
 	length = 2**exp
-	print(length)
 
-	if(quad != None):
-		
-		clockwiseDraw(quad.ne, exp-1, (x + (2**(exp-1))), y, draw)
-		clockwiseDraw(quad.se, exp-1, (x + (2**(exp-1))), (y + (2**(exp-1))), draw)
-		clockwiseDraw(quad.sw, exp-1, x, (y + (2**(exp-1))), draw)
-		clockwiseDraw(quad.nw, exp-1, x, y, draw)
+	if(exp == 0):
+		if( quad != None ):
+			for j in range ( y, (y + length)):
+				for i in range (x, (x + length)):
+					if( len(quad.data) == 1 ):
+						draw.point( (i, j), "blue" )
+					elif( len(quad.data) == 2 ):
+						draw.point( (i, j), "yellow" )
+					elif( len(quad.data) == 3 ):
+						draw.point( (i, j), "orange" )
+					elif( len(quad.data) == 4 ):
+						draw.point( (i, j), "red" )
+					elif( len(quad.data) == 5 ):
+						draw.point( (i, j), "pink")
+					elif( len(quad.data) >= 6 ):
+						draw.point( (i, j), "white")
 
+		return
+
+	else:
+		if(quad != None):
+			clockwiseDraw(quad.ne, exp-1, (x + (2**(exp-1))), y, draw)
+			clockwiseDraw(quad.se, exp-1, (x + (2**(exp-1))), (y + (2**(exp-1))), draw)
+			clockwiseDraw(quad.sw, exp-1, x, (y + (2**(exp-1))), draw)
+			clockwiseDraw(quad.nw, exp-1, x, y, draw)
+	
+"""
 	else:
 		if( exp == 0):
 			print(x, y)
 			for j in range ( y, (y + length)):
 				for i in range (x, (x + length)):
-					draw.point( (i, j), "white" )
-
+					if( len(quad.data) == 1 ):
+						draw.point( (i, j), "light blue" )
+					elif( len(quad.data) == 2 ):
+						draw.point( (i, j), "yellow" )
+					elif( len(quad.data) == 3 ):
+						draw.point( (i, j), "orange" )
+					elif( len(quad.data) == 4 ):
+						draw.point( (i, j), "red" )
+					elif( len(quad.data) == 5 ):
+						draw.point( (i, j), "pink")
+					elif( len(quad.data) >= 6 ):
+						draw.point( (i, j), "white")
+"""
 
 
 def test():
+
+	sys.setrecursionlimit(10000)
+
 	z_home = quadtree.GPSCoord(40.765130, -73.992942)
 	z_times = []
 	z_locs = []
@@ -95,12 +129,12 @@ def test():
 	f.close()
 	"""
 
-	f = open('gps1.txt', 'r')
+	f = open('zac_path.path', 'r')
 
 	for line in f:
 		gps = line.split(',')
-		lat = gps[0].rstrip()
-		lon = gps[1].rstrip()
+		lat = gps[0].strip()
+		lon = gps[1].strip()
 
 		z_locs.append( quadtree.GPSCoord( float(lat), float(lon) ) )
 
@@ -110,11 +144,13 @@ def test():
 	# CREATE NEW PROFILE
 	zax_profile = quadtree.Profile(z_uid, z_fname, z_lname, z_home, z_data)
 	
+	t = time.time()
+
 	# Create data objects and add to tree
 	for i in range(0,len(z_locs)):
 
-		d = quadtree.Data( z_times[i] ) 
-
+		#d = quadtree.Data( z_times[i] ) 
+		d = quadtree.Data( t )
 		zax_profile.addNewData( z_locs[i], d )
 
 
