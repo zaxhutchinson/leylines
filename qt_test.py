@@ -7,45 +7,17 @@ import random
 import config
 import sys
 
-#from tkinter import *
-#from tkinter import ttk
-
 from PIL import Image
 from PIL import ImageDraw
-"""
-#class Map(TopLevel):
-class QTMap():
-	def __init__(self):
-	#def __init__(self, *args, **kwargs):
-		#Tk.__init__(self, *args, **kwargs)
-		
-		self.main = ttk.Frame(self)
 
-		self.scrollX = Scrollbar(self.main, orient=HORIZONTAL)
-		self.scrollY = Scrollbar(self.main, orient=VERTICAL)
-
-		self.quad_map = Canvas(self.main,
-				scrollregion=(0,0,10000,10000),
-				xscrollcommand=self.scrollX.set,
-				yscrollcommand=self.scrollY.set)
-		self.quad_map.config(bg="#000000", height=800, width=800)
-		self.quad_map.grid(column=0,row=0,sticky=N+E+S+W)
-
-		self.scrollX.config(command.self.quad_map.xview)
-		self.scrollY.config(command.self.quad_map.yview)
-		self.scrollX.grid(column=0,row=1,columnspan=2,sticky=N+E+W+S)
-		self.scrollY.grid(column=1,row=0,rowspan=2,sticky=N+E+S+W)
-
-		self.main.grid(column=0, row=0, sticky=N+E+S+W)
-"""
 def drawQuadTree(profile):
 
 	length = profile.tree.getLengthInNumberOfPossibleMinimalQuads()
 	
-	im = Image.new("RGB", (length,length), "black")
+	im = Image.new("RGB", (length,length), "white")
 	draw = ImageDraw.Draw(im)
 
-	exp = (config.RADIUS_EXP - config.MIN_EXP)
+	exp = (profile.tree.current_radius_exp - config.MIN_EXP)
 
 	clockwiseDraw( profile.tree.root, exp, 0, 0, draw )
 
@@ -60,9 +32,9 @@ def clockwiseDraw(quad, exp, x, y, draw):
 		if( quad != None ):
 			for j in range ( y, (y + length)):
 				for i in range (x, (x + length)):
-					if( len(quad.data) == 1 ):
-						draw.point( (i, j), "blue" )
-					elif( len(quad.data) == 2 ):
+					if( len(quad.data) > 0 ):
+						draw.point( (i, j), "black" )
+					"""elif( len(quad.data) == 2 ):
 						draw.point( (i, j), "yellow" )
 					elif( len(quad.data) == 3 ):
 						draw.point( (i, j), "orange" )
@@ -71,7 +43,7 @@ def clockwiseDraw(quad, exp, x, y, draw):
 					elif( len(quad.data) == 5 ):
 						draw.point( (i, j), "pink")
 					elif( len(quad.data) >= 6 ):
-						draw.point( (i, j), "white")
+						draw.point( (i, j), "white")"""
 
 		return
 
@@ -81,31 +53,11 @@ def clockwiseDraw(quad, exp, x, y, draw):
 			clockwiseDraw(quad.se, exp-1, (x + (2**(exp-1))), (y + (2**(exp-1))), draw)
 			clockwiseDraw(quad.sw, exp-1, x, (y + (2**(exp-1))), draw)
 			clockwiseDraw(quad.nw, exp-1, x, y, draw)
-	
-"""
-	else:
-		if( exp == 0):
-			print(x, y)
-			for j in range ( y, (y + length)):
-				for i in range (x, (x + length)):
-					if( len(quad.data) == 1 ):
-						draw.point( (i, j), "light blue" )
-					elif( len(quad.data) == 2 ):
-						draw.point( (i, j), "yellow" )
-					elif( len(quad.data) == 3 ):
-						draw.point( (i, j), "orange" )
-					elif( len(quad.data) == 4 ):
-						draw.point( (i, j), "red" )
-					elif( len(quad.data) == 5 ):
-						draw.point( (i, j), "pink")
-					elif( len(quad.data) >= 6 ):
-						draw.point( (i, j), "white")
-"""
 
 
 def test():
 
-	sys.setrecursionlimit(10000)
+	sys.setrecursionlimit(100000)
 
 	z_home = quadtree.GPSCoord(40.765130, -73.992942)
 	z_times = []
@@ -151,7 +103,10 @@ def test():
 
 		#d = quadtree.Data( z_times[i] ) 
 		d = quadtree.Data( t )
-		zax_profile.addNewData( z_locs[i], d )
+		check = zax_profile.addNewData( z_locs[i], d )
+
+		if(check == False):
+			print("FUCK UP")
 
 
 	# SAVE IT

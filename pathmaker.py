@@ -22,21 +22,21 @@ def pathmaker( path_list, GPS1, GPS2 ):
 			lon = GPS1.lon
 			while( lon < GPS2.lon ):
 
-				lat = getY(slope, lon, GPS2)
+				lat = getY(slope, lon, GPS1)
 
 				path_list.append(GPS(lat,lon))
 
 				lon += thirty_two_meters
 
 		else:
-			lon = GPS2.lon
+			lon = GPS1.lon
 
-			while( lon < GPS1.lon ):
+			while( lon > GPS2.lon ):
 				lat = getY(slope, lon, GPS1)
 
 				path_list.append(GPS(lat,lon))
 
-				lon += thirty_two_meters
+				lon -= thirty_two_meters
 
 	else:
 		if( GPS1.lat < GPS2.lat ):
@@ -45,22 +45,22 @@ def pathmaker( path_list, GPS1, GPS2 ):
 
 			while( lat < GPS2.lat ):
 
-				lon = getX(slope, lat, GPS2)
+				lon = getX(slope, lat, GPS1)
 
 				path_list.append(GPS(lat, lon))
 
 				lat += thirty_two_meters
 
 		else:
-			lat = GPS2.lat
+			lat = GPS1.lat
 
-			while( lat < GPS1.lat ):
+			while( lat > GPS2.lat ):
 
 				lon = getX(slope, lat, GPS1)
 
 				path_list.append(GPS(lat,lon))
 
-				lat += thirty_two_meters
+				lat -= thirty_two_meters
 
 
 
@@ -91,9 +91,17 @@ v = GPS(40.756921, -73.988998) # movie
 w = GPS(40.758417, -73.992636) # 9 & 42
 x = GPS(40.763504, -73.988945) # 9 & 50
 y = GPS(40.765584, -73.993923) # house
+z = GPS(40.803344, -74.072378) # NJ (3 & 95)
+aa = GPS(40.850625, -73.970755) # Fort Lee NJ
+bb = GPS(40.850495, -73.876942) # Bronx Zoo
+cc = GPS(40.756809, -73.846043) # Citi Field
+dd = GPS(40.659995, -73.968437) # Prospect Park
+ee = GPS(40.765523, -73.993878) # house
+ff = GPS(40.759409, -74.208763) # Garden State Parkway & 280
 
 
-locs = [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y]
+
+locs = [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,aa,bb,cc,dd,ee,ff]
 
 for i in range(0,(len(locs)-1)):
 
