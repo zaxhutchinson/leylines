@@ -160,24 +160,26 @@ class QuadTree:
 		if(exterior_quadrant == 1):
 			new_root_top_left = self.getGPSCoordByDirectionAndCourse( self.root.top_left, self.current_radius, 0 )		
 			new_root_bottom_right = self.getGPSCoordByDirectionAndCourse( self.root.bottom_right, self.current_radius, 90 )
-			new_root = Quad( None, new_root_top_left, new_root_top_right )
+			new_root = Quad( None, new_root_top_left, new_root_bottom_right )
 			new_root.sw = self.root
 		elif(exterior_quadrant == 2):
 			new_root_top_left = self.root.top_left
 			new_lat = self.getGPSCoordByDirectionAndCourse( self.root.bottom_right, self.current_radius, 90).longitude
 			new_long = self.getGPSCoordByDirectionAndCourse( self.root.bottom_right, self.current_radius, 180).latitude
 			new_root_bottom_right = GPSCoord( new_lat, new_long )
-			new_root = Quad(None, new_root_top_left, new_root_top_right )
+			new_root = Quad(None, new_root_top_left, new_root_bottom_right )
 			new_root.nw = self.root
 		elif(exterior_quadrant == 3):
 			new_root_top_left = self.getGPSCoordByDirectionAndCourse( self.root.top_left, self.current_radius, 270)
 			new_root_bottom_right = self.getGPSCoordByDirectionAndCourse( self.root.bottom_right, self.current_radius, 90)
+			new_root = Quad(None, new_root_top_left, new_root_bottom_right )
 			new_root.ne = self.root
 		elif(exterior_quadrant == 4):
 			new_lat = self.getGPSCoordByDirectionAndCourse( self.root.top_left, self.current_radius, 0).latitude
 			new_long = self.getGPSCoordByDirectionAndCourse( self.root.top_left, self.current_radius, 270).longitude
 			new_root_top_left = GPSCoord( new_lat, new_long )
 			new_root_bottom_right = self.root.bottom_right
+			new_root = Quad(None, new_root_top_left, new_root_bottom_right )
 			new_root.se = self.root
 		elif(exterior_quadrant == -1):
 			return -2 # MAJOR FUCKING ERROR
@@ -190,7 +192,7 @@ class QuadTree:
 		self.root = new_root
 
 	def getQuadrantForExteriorCoord( self, coord ):
-		midpoint = self.getMidPoint( self.root )
+		midpoint = self.getMidPoint( self.root.top_left, self.root.bottom_right )
 
 		if( coord.latitude > midpoint.latitude and coord.longitude >= midpoint.longitude ):
 			return 1
@@ -228,6 +230,7 @@ class QuadTree:
 
 	def getGPSCoordByDirectionAndCourse( self, coord, distance, course ):
 		course_in_radians = math.radians( course )
+		print(distance / config.MINUTES_TO_METERS / config.DEGREES_TO_MINUTES)
 		distance_in_radians = math.radians( distance / config.MINUTES_TO_METERS /
 												config.DEGREES_TO_MINUTES )
 
