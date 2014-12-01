@@ -2,44 +2,12 @@
 import math
 import pickle
 import sys
-import alignment
+import time
+from collections import deque
+
 import config
-
-class Profile:
-	def __init__(self, uid, first_name, last_name, coord, data):
-		self.uid = uid
-		self.first_name = first_name
-		self.last_name = last_name
-		self.tree = QuadTree(coord, data)
-
-	@classmethod
-	def load(cls, filename):
-		input_file = open(filename, 'rb')
-		return pickle.load(input_file)
-
-	def save(self):
-		output_file = open(self.uid, 'wb')
-		pickle.dump(self, output_file)
-		output_file.close()
-
-	def addNewData( self, coord, data ):
-		return self.tree.addNewData( coord, data )
-		
-class Data:
-	def __init__(self, time, new_info=None):
-		self.time = time
-		self.info = new_info
-		self.location = None
-		self.prev_entry = None
-		self.next_entry = None
-
-
-class GPSCoord:
-	def __init__(self, new_lat, new_long):
-		self.latitude = new_lat
-		self.longitude = new_long
-	def display(self):
-		print 'LAT: {}, LONG: {}'.format(self.latitude, self.longitude)
+import alignment
+import misc
 
 class Quad:
 	def __init__(self, parent, top_left, bottom_right):
@@ -89,15 +57,15 @@ class QuadTree:
 			self.dodman_of_day.addQuad(data.time, quad)
 		return
 
-	def updateQuadTree( self, new_coord, data ):
-		
-		tree = self
-
-		while( self.addCoord( new_coord, tree.root, self.current_radius, data ) != 0 ):
-			if( tree.next_tree == None ):
-				tree.next_tree = QuadTree( new_coord, data )
-			else:
-				tree = tree.next_tree
+	#def updateQuadTree( self, new_coord, data ):
+	#	
+	#	tree = self
+	#
+	#	while( self.addCoord( new_coord, tree.root, self.current_radius, data ) != 0 ):
+	#		if( tree.next_tree == None ):
+	#			tree.next_tree = QuadTree( new_coord, data )
+	#		else:
+	#			tree = tree.next_tree
 
 	def addNewData(self, coord, data):
 		if( (self.addCoord( coord, self.root, self.current_radius, data)) == -2 ):
@@ -117,7 +85,7 @@ class QuadTree:
 			self.addData( quad, data )
 			return 0
 		
-		which_quad = self.getQuadForGPSCoord( coord, quad.top_left, quad.bottom_right )
+		which_quad = self.getRelativeQuadrantForCoord( coord, quad.top_left, quad.bottom_right )
 		mid_point = self.getMidPoint( quad.top_left, quad.bottom_right )
 
 		# MAJOR ERROR
@@ -133,26 +101,69 @@ class QuadTree:
 		elif( which_quad == 1 ):
 			if( quad.ne == None ):
 				quad.ne = Quad( quad, 
-							GPSCoord(quad.top_left.latitude, mid_point.longitude),
-							GPSCoord(mid_point.latitude, quad.bottom_right.longitude) )
+							misc.GPSCoord(quad.top_left.latitude, mid_point.longitude),
+							misc.GPSCoord(mid_point.latitude, quad.bottom_right.longitude) )
 			return self.addCoord( coord, quad.ne, (radius / 2), data)
 		# SE
 		elif( which_quad == 2 ):
 			if( quad.se == None ):
-				quad.se = Quad( quad, mid_point, quad.bottom_right )
+				quad.se = misc.Quad( quad, mid_point, quad.bottom_right )
 			return self.addCoord( coord, quad.se, (radius / 2), data )
 		# SW
 		elif( which_quad == 3 ):
 			if( quad.sw == None ):
 				quad.sw = Quad( quad,
-							GPSCoord(mid_point.latitude, quad.top_left.longitude),
-							GPSCoord(quad.bottom_right.latitude, mid_point.longitude) )
+							misc.GPSCoord(mid_point.latitude, quad.top_left.longitude),
+							misc.GPSCoord(quad.bottom_right.latitude, mid_point.longitude) )
 			return self.addCoord( coord, quad.sw, (radius / 2), data )
 		# NW
 		elif( which_quad == 4 ):
 			if( quad.nw == None ):
-				quad.nw = Quad( quad, quad.top_left, mid_point )
-			return self.addCoord( coord, quad.nw, (radius / 2), data )			
+				quad.nw = misc.Quad( quad, quad.top_left, mid_point )
+			return self.addCoord( coord, quad.nw, (radius / 2), data )
+
+	def isKnownCoord(self, coord):
+		if(self.getLeafQuadForCoord(self.root, self.current_radius, coord) == None):
+			return False
+		else:
+			return True
+
+	def isCoordInLastAddedQuad(self, coord):
+		quad = self.getLeafQuadForCoord( self.root, self.current_radius, coord )
+
+		if(quad == self.prev_entry):
+			return True
+		else:
+			return False
+
+	def getLeafQuadForCoord(self, quad, radius, coord):
+		if(radius <= config.QUAD_MIN):
+			return quad
+
+		which_quad = self.getRelativeQuadrantForCoord( coord, quad.top_left, quad.bottom_right )
+		
+		if( which_quad == -2 or which_quad == -1 ):
+			return None
+		elif( which_quad == 1):
+			if( quad.ne == None): 
+				return None
+			else:
+				return self.getLeafQuadForCoord(quad.ne, (radius / 2), coord)
+		elif( which_quad == 2):
+			if( quad.se == None):
+				return None
+			else:
+				return self.getLeafQuadForCoord(quad.se, (radius / 2), coord)
+		elif( which_quad == 3):
+			if( quad.sw == None):
+				return None
+			else:
+				return self.getLeafQuadForCoord(quad.sw, (radius / 2), coord)
+		elif( which_quad == 4):
+			if( quad.nw == None ):
+				return None
+			else:
+				return self.getLeafQuadForCoord(quad.nw, (radius / 2), coord)
 
 	def enlargeQuadTree( self, coord ):
 		exterior_quadrant = self.getQuadrantForExteriorCoord( coord )
@@ -260,19 +271,19 @@ class QuadTree:
 								math.sin(lat1) * math.sin(new_lat) )
 		new_long = math.fmod( (long1 + temp_long + config.PI), (2.0 * config.PI) )- config.PI
 		
-		return GPSCoord( math.degrees(new_lat), math.degrees(new_long) )
+		return misc.GPSCoord( math.degrees(new_lat), math.degrees(new_long) )
 
 	def getNewTopLeft( self, coord, radius ):
 		new_top = self.getGPSCoordByDirectionAndCourse( coord, radius, 0.0 )
 		new_left = self.getGPSCoordByDirectionAndCourse( coord, radius, 270.0 )
 
-		return GPSCoord(new_top.latitude, new_left.longitude)
+		return misc.GPSCoord(new_top.latitude, new_left.longitude)
 
 	def getNewBottomRight( self, coord, radius ):
 		new_bottom = self.getGPSCoordByDirectionAndCourse( coord, radius, 180.0 )
 		new_right = self.getGPSCoordByDirectionAndCourse( coord, radius, 90.0 )
 
-		return GPSCoord( new_bottom.latitude, new_right.longitude )
+		return misc.GPSCoord( new_bottom.latitude, new_right.longitude )
 
 	def getMidPoint( self, quad ):
 		return self.getMidPoint( quad.top_left, quad.bottom_right )
@@ -283,17 +294,17 @@ class QuadTree:
 		mid_long = ( (bottom_right.longitude - top_left.longitude) / 2.0) + \
 					top_left.longitude
 
-		return GPSCoord( mid_lat, mid_long )
+		return misc.GPSCoord( mid_lat, mid_long )
 
 	def getRadiusOfQuad( self, quad ):
-		top_right = GPSCoord( quad.top_left.latitude, quad.bottom_right.longitude )
+		top_right = misc.GPSCoord( quad.top_left.latitude, quad.bottom_right.longitude )
 
 		return self.distanceBetweenTwoPoints( quad.top_left, top_right )
 
-	def getQuadForGPSCoord( self, coord, quad ):
-		return getQuadForGPSCoord( coord, quad.top_left, quad.bottom_right )
+	def getRelativeQuadrantForCoord( self, coord, quad ):
+		return getRelativeQuadrantForCoord( coord, quad.top_left, quad.bottom_right )
 
-	def getQuadForGPSCoord( self, coord, top_left, bottom_right ):
+	def getRelativeQuadrantForCoord( self, coord, top_left, bottom_right ):
 		mid_point = self.getMidPoint( top_left, bottom_right )
 
 		# NOT IN THIS QUAD, ERROR
@@ -322,6 +333,12 @@ class QuadTree:
 		# ERROR
 		else:
 			return -2
+
+	def getDistanceToGoodQuad(self, coord):
+		closest_good_quad = self.getClosestGoodQuad(coord)
+		mid_point = self.getMidPoint(closest_good_quad.top_left,
+										closes_good_quad.bottom_right)
+		return self.distanceBetweenTwoPoints( mid_point, coord )
 
 	def getClosestGoodQuad(self, coord ):
 		
@@ -426,7 +443,7 @@ class QuadTree:
 			return 4
 		else:
 			return -1
-
+	"""
 	def printTree( self, root, level=0 ):
 		if(root != None):
 			
@@ -442,6 +459,8 @@ class QuadTree:
 			self.printTree(root.se, level+1)
 			self.printTree(root.sw, level+1)
 			self.printTree(root.nw, level+1)
+	"""
+	
 	def getCurrentRadiusInQuads(self):
 		return 2**self.current_radius_exp
 

@@ -15,7 +15,16 @@ TIME_BLOCK = 15
 
 ########################################
 ### DO NOT CHANGE VALUES ONCE IN USE ###
+HOST = ''
+PORT = 65006
 MSG_AWK = 0
-MSG_DATA = 1
+MSG_INIT= 1
 MSG_PREF = 2
+MSG_GPS = 3
+
+DEFCON_1 = 0.80
+DEFCON_2 = 0.60
+DEFCON_3 = 0.40
+DEFCON_4 = 0.20
+DEFCON_5 = 0.00
 ########################################
