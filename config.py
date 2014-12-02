@@ -13,6 +13,11 @@ MIN_VISITS_TO_CREATE_MEGALITH = 2
 
 TIME_BLOCK = 15
 
+# This is multiplied by the GPS send frequency in order
+# to determine the time span in which to consider
+# recent GPS entries for a new danger level computation. 
+DANGER_LEVEL_TIME_BLOCK = 2.0
+
 ########################################
 ### DO NOT CHANGE VALUES ONCE IN USE ###
 HOST = ''

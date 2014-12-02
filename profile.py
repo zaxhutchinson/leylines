@@ -15,7 +15,7 @@ import config
 #	-AND/OR relationships?
 class Preferences:
 	def __init__(self):
-		self.defcon_threshold = 1
+		self.defcon_threshold = 1.0
 		self.max_unknown_distance = 0.0
 		self.max_distance_to_known_quad = 0.0
 		self.max_time_on_unknown_path = 0.0
@@ -142,7 +142,8 @@ class Profile:
 
 	def getCurrentDefconLevel(self):
 		return self.status.current_defcon
-
+	def setCurrentDefconLevel(self, new_defcon):
+		self.status.current_defcon = new_defcon
 	def isDefconThresholdReached(self):
 		if( self.getCurrentDefconLevel() >= self.getDefconThreshold() ):
 			return True
@@ -180,6 +181,9 @@ class Profile:
 		return self.current_path.pop()
 	def getCurrentPathOldestLocation(self):
 		return self.current_path.popleft()
+	def returnOldLocationToPath(self, loc):
+		self.current_path.appendleft(loc)
+		return
 	def appendToCurrentPathFromWhole(self, loc):
 		self.current_path.append(loc)
 		return
@@ -193,6 +197,10 @@ class Profile:
 		while(len(self.current_path) > 0):
 			loc = self.current_path.popleft()
 			self.addNewData(loc[0],loc[1])
+	# Add a single location stripping out the deviation info
+	def dumpLocation(self, loc):
+		self.addNewData(loc[0], loc[1])
+
 
 	def addNewData( self, coord, data ):
 		return self.tree.addNewData( coord, data )

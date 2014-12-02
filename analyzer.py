@@ -121,7 +121,8 @@ def examineNewLocation( profile ):
 
 	if( profile.unexamined_path.empty() ):
 		profile.updated = False
-			
+
+# 			
 def examineCurrentPath( profile ):
 
 	length = len(profile.current_path)
@@ -136,26 +137,27 @@ def examineCurrentPath( profile ):
 		if(last_loc != None):
 			temp_deque.append(last_loc)
 
-		# Get the time in secs of ( last_time - GPS Send Freq )
-		max_time = last_loc[1].time - profile.getGPSSendFrequency()
+			# Get the time in secs of ( last_time - GPS Send Freq )
+			max_time = last_loc[1].time - (config.DANGER_LEVEL_TIME_BLOCK * profile.getGPSSendFrequency())
 
-		# Loop while we haven't reached the beginning of the queue
-		# and the time of the present element we're inspecting is
-		# is not older than max_time
-		while( True ):
-			#Get next oldest location
-			last_loc = profile.getCurrentPathNewestLocation()
+			# Loop while we haven't reached the beginning of the queue
+			# and the time of the present element we're inspecting is
+			# is not older than max_time
+			while( True ):
+				#Get next oldest location
+				last_loc = profile.getCurrentPathNewestLocation()
+					# If it falls within the GPS send time...
+					if(last_loc[1].time < max_time):
 
-			# If it falls within the GPS send time...
-			if(last_loc[1].time < max_time):
+						# Add it to the temp queue
+						temp_deque.append(last_loc)
+					
+					else:
+						profile.appendToCurrentPathFromWhole(last_loc)
+						break
+		else:
+			break
 
-				# Add it to the temp queue
-				if(last_loc != None):
-					temp_deque.append(last_loc)
-				# Else add it back to the current path and break
-				else:
-					profile.appendToCurrentPathFromWhole(last_loc)
-					break
 
 		
 		# Non-local storage for the loop
@@ -174,9 +176,35 @@ def examineCurrentPath( profile ):
 			profile.appendToCurrentPathFromWhole(loc)
 
 		# Use what we found to calculate newest danger level
-		profile.setCurrentDangerLevel( total_deviation / number_inspected )
+		if(number_inspected > 0):
+			profile.setCurrentDangerLevel( total_deviation / number_inspected )
 
-
+# Remove older additions from the current path depending on the current defcon level.
 def purgeCurrentPathToTree( profile ):
-	
-	if(
+
+	# If the current defcon level is above the defcon threshold, do not
+	# send any data to the quad tree.
+	if(profile.getCurrentDefconLevel() <= profile.getDefconThreshold()):
+		return	
+
+	# If the defcon level is five, we don't need to worry too much
+	# Remove from the current path queue all location entries older
+	# than the current GPS send frequency.	
+	elif(profile.getCurrentDefconLevel() == 5.0):
+		
+		oldest_loc = profile.getCurrentPathOldestLocation()
+		if(oldest_loc != None):
+			purge_to_date = oldest_loc[1].time + profile.getGPSSendFrequency()
+
+			while( oldest_loc[1].time < purge_to_date ):
+				profile.dumpLocation(oldest_loc)
+
+				oldest_loc = profile.getCurrentPathOldestLocation()	
+
+		else:
+			break
+	# What to do if it's above 5 and below theshold ?
+	else:
+		oldest_loc = profile.getCurrentPathOldestLocation()
+		if(oldest_loc != None):
+				
