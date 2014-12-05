@@ -27,9 +27,14 @@ MSG_INIT= 1
 MSG_PREF = 2
 MSG_GPS = 3
 
-DEFCON_1 = 0.80
-DEFCON_2 = 0.60
-DEFCON_3 = 0.40
-DEFCON_4 = 0.20
-DEFCON_5 = 0.00
+DEFCON_1 = 0.1
+DEFCON_2 = 0.2
+DEFCON_3 = 0.3
+DEFCON_4 = 0.4
+DEFCON_5 = 0.5
+DEFCON_6 = 0.6
+DEFCON_7 = 0.7
+DEFCON_8 = 0.8
+DEFCON_9 = 0.9
+DEFCON_10 = 1.0
 ########################################

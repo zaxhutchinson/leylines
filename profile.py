@@ -41,16 +41,21 @@ class Status:
 
 	def getDefconForDangerLevel(self, danger_level):
 		
-		defcon = 5
+		defcon = 0
 
-		if( danger_value >= config.DEFCON_4 ):
+		if( danger_value >= config.DEFCON_1 ):
+			defcon = 1
+		elif( danger_value >= config.DEFCON_2 ):
+			defcon = 2
+		elif( danger_value >= config.DEFCON_3 ):
+			defcon = 3
+		elif( danger_value >= config.DEFCON_4 ):
 			defcon = 4
-			if( danger_value >= config.DEFCON_3 ):
-				defcon = 3
-				if( danger_value >= config.DEFCON_2 ):
-					defcon = 2
-					if( danger_value >= config.DEFCON_1 ):
-						defcon = 1
+		elif( danger_value >= config.DEFCON_5 ):
+			defcon = 5
+		elif( danger_value >= config.DEFCON_6 ):
+			defcon = 6
+		elif( danger_
 
 		return defcon
 

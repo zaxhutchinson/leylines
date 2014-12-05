@@ -190,7 +190,7 @@ def purgeCurrentPathToTree( profile ):
 	# If the defcon level is five, we don't need to worry too much
 	# Remove from the current path queue all location entries older
 	# than the current GPS send frequency.	
-	elif(profile.getCurrentDefconLevel() == 5.0):
+	elif(profile.getCurrentDefconLevel() == 0.0):
 		
 		oldest_loc = profile.getCurrentPathOldestLocation()
 		if(oldest_loc != None):
