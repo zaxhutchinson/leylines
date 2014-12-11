@@ -29,6 +29,7 @@ class Preferences:
 		self.gps_collection_freq = 0.0
 		self.gps_send_freq = 0.0
 
+		self.friend_list = []
 
 # The status of the user
 class Status:
@@ -55,7 +56,14 @@ class Status:
 			defcon = 5
 		elif( danger_value >= config.DEFCON_6 ):
 			defcon = 6
-		elif( danger_
+		elif( danger_value >= config.DEFCON_7 ):
+			defcon = 7
+		elif( danger_value >= config.DEFCON_8 ):
+			defcon = 8
+		elif( danger_value >= config.DEFCON_9 ):
+			defcon = 9
+		elif( danger_value >= config.DEFCON_10 ):
+			defcon = 10
 
 		return defcon
 
@@ -127,6 +135,10 @@ class Profile:
 		return self.preferences.weight_max_time_unmoved
 	def setWeightTimeOnUnknownPath(self, weight):
 		self.preferences.weight_max_time_unmoved = weight
+	def getFriendRange(self):
+		return self.preferences.friend_range
+	def setFriendRange(self, new_range):
+		self.preferences.friend_range = new_range
 	# ===============================================================
 	# STATUS GET/SET
 	def getCurrentUnknownDistance(self):
@@ -226,6 +238,10 @@ class Profile:
 	# Has the user changed position from the last logged location
 	def hasLocationChanged(self, coord):
 		return self.tree.isCoordInLastAddedQuad(coord)
+
+	# Get the last entry into the quadtree
+	def getLastCoordInQuadTree(self):
+		return self.tree.getPrevEntryLocationMidPoint()
 
 
 	

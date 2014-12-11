@@ -5,6 +5,7 @@ import pickle
 import time
 import socket
 import config
+from collections import deque
 
 class Leylines:
 	def __init__(self):
@@ -12,6 +13,10 @@ class Leylines:
 		# Holds the profiles currently loaded in a dictionary
 		# Key = uid, value is the profile
 		self.loaded_profiles = {}
+		# This contains the loaded profiles UIDs. The run method
+		# cycles through these in order and retrieves them from the
+		# sister dictionary above.
+		self.loaded_profiles_uid_queue = deque()
 
 		# Holds all the pref_key files needing to be read.
 		self.dispatch_queue = Queue.Queue()
@@ -24,6 +29,10 @@ class Leylines:
 		self.leysocket.bind((config.HOST,config.PORT))
 		self.leysocket.listen(100)
 
+		self.isRunning = True
+		self.isDone = False
+
+		self.start()
 
 	def __del__(self):
 		
@@ -59,16 +68,60 @@ class Leylines:
 
 	def start(self):
 
-		listener = threading.Thread(target=self.listener)
-		listener.daemon = True
-		listener.start()
+		self.listener = threading.Thread(target=self.listener)
+		self.listener.start()
 
-		dispatcher = threading.Thread(target=self.dispatcher)
-		dispatcher.daemon = True
-		dispatcher.start()
+		self.dispatcher = threading.Thread(target=self.dispatcher)
+		self.dispatcher.start()
+
+		self.run()
+
+	def run(self):
+		
+		while(not self.isDone):
+			
+			# Get the uid of the next profile in line
+			next_uid = self.loaded_profiles_uid_queue.popleft()
+
+			# Use the uid to retrieve the actual profile
+			next_profile = self.loaded_profiles[next_uid]
+
+			# If this profile has been updated
+			if next_profile.updated:
+
+				# Examine any new locations that have been added
+				analyzer.examineNewLocation( next_profile )
+
+				# Examine the current path
+				analyzer.examineCurrentPath( next_profile )
+
+				# Check friend levels
+				for friend in next_profile.friend_list:
+
+
+				# If needed, purge all or path of the current path
+				# to the quad tree.
+				purgeCurrentPathToTree( next_profile )
+
+			# Add the uid to the end of the queue
+			self.loaded_profiles_uid_queue.append( next_uid )
+
+
+		while( threading.activeCount > 1 ):
+			# We wait for the other threads handling messages
+			# to finish. Sleep for a sec, check again.
+			time.sleep(1)
+
+		# Everything is stopped. No, new information coming in.
+		# Save all profiles.
+		for uid in self.loaded_profiles.keys():
+			self.storeProfile(uid)
+
+		# Also should check queues for unprocessed messages
+		self.log_file.close()
 
 	def listener(self):
-		while(True):
+		while(isRunning):
 			conn,addr = self.leysocket.accept()
 			msg = ""
 			while(True):
@@ -84,7 +137,10 @@ class Leylines:
 
 	def dispatcher(self):
 		
-		while(True):
+		# The dispatcher should continue to run until it has been asked
+		# to terminate and the dispatch is not empty. It must continue
+		# until all messages are processed.
+		while(isRunning or (not self.dispatch_queue.empty()) ):
 			msg = self.dispatch_queue.get()
 			self.dispatch_queue.task_done()
 			#typ_msg = msg.split('\n',1)
@@ -106,6 +162,10 @@ class Leylines:
 				rec_gps.start()
 			else:
 				None # ERROR
+
+		# The dispatcher has processed all messages and is ready to
+		# terminate
+		self.isDone = True
 			
 
 	# The following functions are called by dispatcher depending on
@@ -130,6 +190,9 @@ class Leylines:
 
 	def log(self, text):
 		self.log_file.write(text)
+
+	def stopLeylines(self):
+		self.isRunning = False
 
 
 if __name__ == "__main__"():

@@ -38,11 +38,6 @@ def calculateTotalDistanceDeviation( max_dist, dist ):
 # current_path.
 def examineNewLocation( profile ):
 
-	# profile has not been updated since we last checked,
-	# so do nothing.
-	if not profile.updated:
-		return
-
 	# Since this is a while something loop, we need to have a max number of
 	# iterations or else there is a theoretical risk, it never terminates
 	# if someone's app continues to update the queue with GPS coords. 
@@ -138,7 +133,8 @@ def examineCurrentPath( profile ):
 			temp_deque.append(last_loc)
 
 			# Get the time in secs of ( last_time - GPS Send Freq )
-			max_time = last_loc[1].time - (config.DANGER_LEVEL_TIME_BLOCK * profile.getGPSSendFrequency())
+			max_time = last_loc[1].time - 
+				(config.DANGER_LEVEL_TIME_BLOCK * profile.getGPSSendFrequency())
 
 			# Loop while we haven't reached the beginning of the queue
 			# and the time of the present element we're inspecting is
@@ -157,8 +153,6 @@ def examineCurrentPath( profile ):
 						break
 		else:
 			break
-
-
 		
 		# Non-local storage for the loop
 		number_inspected = 0
@@ -190,12 +184,20 @@ def purgeCurrentPathToTree( profile ):
 	# If the defcon level is five, we don't need to worry too much
 	# Remove from the current path queue all location entries older
 	# than the current GPS send frequency.	
-	elif(profile.getCurrentDefconLevel() == 0.0):
+	elif(profile.getCurrentDefconLevel() < 1):
 		
 		oldest_loc = profile.getCurrentPathOldestLocation()
 		if(oldest_loc != None):
 			purge_to_date = oldest_loc[1].time + profile.getGPSSendFrequency()
 
+			# The newest date we want to purge is the present time minus
+			# the GPS Send Frequency. If purge_to_date is more recent than that
+			# just the max.
+			max_purge_to_date = (int(time.time()) - profile.getGPSSendFrenquency() )
+			if(purge_to_date > max_purge_to_date ):
+				purge_to_date = max_purge_to_date
+
+			# Purge everything up to the purge date and dump it into the quadtree.
 			while( oldest_loc[1].time < purge_to_date ):
 				profile.dumpLocation(oldest_loc)
 
@@ -203,8 +205,60 @@ def purgeCurrentPathToTree( profile ):
 
 		else:
 			break
-	# What to do if it's above 5 and below theshold ?
+	# Above 1 but below threshold:
+	# Only purge data more than 24 hours old.
 	else:
 		oldest_loc = profile.getCurrentPathOldestLocation()
 		if(oldest_loc != None):
-				
+			purge_to_date = time.time() - config.DAY_IN_SECS
+
+			# Purge everything up to the purge date and dump it into the quadtree.
+			while( oldest_loc[1].time < purge_to_date ):
+				profile.dumpLocation(oldest_loc)
+
+				oldest_loc = profile.getCurrentPathOldestLocation()	
+
+		else:
+			break
+
+# We check the distance between our last known coord that is either
+# in the current path or last entry into the tree, against our friend's
+# profile. If we're within friend range, we artificially set the defcon
+# to 0. This does not change the danger level or deviation associated
+# with each entry into the current path.
+def friendCheck( profile, friend_profile ):
+
+	size_cur_path = len(profile.current_path)
+	size_cur_friend_path = len(profile.current_path)
+
+	last_known_coord = None
+	last_known_friend_coord = None
+
+	if(size_cur_path > 0):
+		
+		last_entry = profile.current_path[size_cur_path]
+
+		last_known_coord = last_entry[0]
+
+	else:
+		last_known_coord = profile.getLastCoordInQuadTree()
+
+	if(size_cur_friend_path > 0):
+
+		last_friend_entry = friend_profile.current_path[size_cur_friend_path]
+
+		last_known_friend_coord = last_friend_entry[0]
+
+	else:
+		last_known_friend_coord = friend_profile.current_path[size_cur_friend_path]
+
+	if ( (last_known_coord not None) and (last_known_friend_coord not None) ):
+		distance = distanceBetweenTwoPoints( last_known_coord,
+												last_known_friend_coord )
+
+		if( distance <= profile.getFriendRange() ):
+
+			profile.getFriendRange()
+
+			profile.setCurrentDefconLevel( 0 )
+

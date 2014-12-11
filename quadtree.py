@@ -26,7 +26,6 @@ class Quad:
 class QuadTree:
 	def __init__(self, coord, data = None):
 		self.prev_entry = None
-		self.next_tree = None
 
 		self.current_radius_exp = config.RADIUS_EXP
 
@@ -56,16 +55,6 @@ class QuadTree:
 			self.dodman_of_time.addQuad(data.time, quad)
 			self.dodman_of_day.addQuad(data.time, quad)
 		return
-
-	#def updateQuadTree( self, new_coord, data ):
-	#	
-	#	tree = self
-	#
-	#	while( self.addCoord( new_coord, tree.root, self.current_radius, data ) != 0 ):
-	#		if( tree.next_tree == None ):
-	#			tree.next_tree = QuadTree( new_coord, data )
-	#		else:
-	#			tree = tree.next_tree
 
 	def addNewData(self, coord, data):
 		if( (self.addCoord( coord, self.root, self.current_radius, data)) == -2 ):
@@ -295,6 +284,11 @@ class QuadTree:
 					top_left.longitude
 
 		return misc.GPSCoord( mid_lat, mid_long )
+
+	def getPrevEntryLocationMidPoint(self):
+		prev_quad = self.prev_entry.location
+
+		return self.getMidPoint( prev_quad.top_left, prev_quad.bottom_right )
 
 	def getRadiusOfQuad( self, quad ):
 		top_right = misc.GPSCoord( quad.top_left.latitude, quad.bottom_right.longitude )
