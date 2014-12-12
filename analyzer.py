@@ -1,6 +1,7 @@
 import time
 import math
 import config
+import alert
 from collections import deque
 
 def toDegrees( radians ):
@@ -254,7 +255,7 @@ def friendCheck( profile, friend_profile ):
 
 	if ( (last_known_coord not None) and (last_known_friend_coord not None) ):
 		distance = distanceBetweenTwoPoints( last_known_coord,
-												last_known_friend_coord )
+							last_known_friend_coord )
 
 		if( distance <= profile.getFriendRange() ):
 
@@ -262,3 +263,21 @@ def friendCheck( profile, friend_profile ):
 
 			profile.setCurrentDefconLevel( 0 )
 
+
+def checkDefconStatus( profile ):
+	defcon_contacts = profile.getDefconContactList()
+
+	now = int( time.time() )
+
+	for contact in defcon_contacts:
+		# If the defcon level exceeds the user-defined threshold
+		# AND
+		# the last altert plus freq is less than the present time,
+		# Send alert and update time stamp
+		if( contact.defcon >= profile.getCurrentDefconLevel() and
+			(contact.last_alert_time_stamp + profile.getAlertFrequency()) <= now ) ):
+			alert.send_alert( profile.getPassword(), contact.email, contact.msg )
+
+			# We've sent an alert to update the time stamp.
+			contact.last_alert_time_stamp = int( time.time() )
+		

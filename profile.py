@@ -10,6 +10,13 @@ import alignment
 import config
 
 
+class Contact:
+	def __init__(self, email="", defcon=10, msg=""):
+		self.email = email
+		self.defcon = defcon
+		self.msg = msg
+		self.last_alert_time_stamp = 0
+
 # The user's preferences
 # NOTE:
 #	-AND/OR relationships?
@@ -31,6 +38,11 @@ class Preferences:
 
 		self.friend_list = []
 
+		self.defcon_contact_list = []
+		self.defcon_alert_freq = 3600 # In secs
+		
+		self.password = 'plan9sucks'
+
 # The status of the user
 class Status:
 	def __init__(self):
@@ -39,6 +51,8 @@ class Status:
 		self.unknown_path_total_distance = 0.0
 		self.time_stamp_last_known_location = 0.0
 		self.danger_level = 0.0
+
+		self.alert_has_been_sent = False
 
 	def getDefconForDangerLevel(self, danger_level):
 		
@@ -139,6 +153,14 @@ class Profile:
 		return self.preferences.friend_range
 	def setFriendRange(self, new_range):
 		self.preferences.friend_range = new_range
+	def getDefconContactList(self):
+		return self.preferences.defcon_contact_list
+	def addContactToDefconContactList(self, contact):
+		self.preferences.defcon_contact_list.append( contact )
+	def getPassword(self):
+		return self.preferences.password
+	def setPassword(self, new_password)
+		self.preferences.password = password
 	# ===============================================================
 	# STATUS GET/SET
 	def getCurrentUnknownDistance(self):
@@ -187,6 +209,12 @@ class Profile:
 		self.unexamined_path.put( (coord,data) )
 		self.updated = True
 		return
+
+	# Takes elements of a new contact, makes a new contact
+	# and adds it to the defcon contact list.
+	def addNewContact( self, email, defcon_level, msg ):
+		contact = Contact(email, defcon_level, msg )
+		self.addContactToDefconContactList( contact )
 
 	# Adds the oldest unexamined loc to the current path,
 	# enlarging the tuple to include the state: 0 if not in tree, 1 if it is.
