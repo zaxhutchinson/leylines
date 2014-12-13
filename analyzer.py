@@ -263,6 +263,8 @@ def friendCheck( profile, friend_profile ):
 
 			profile.setCurrentDefconLevel( 0 )
 
+def checkDisconnectStatus( profile ):
+	
 
 def checkDefconStatus( profile ):
 	defcon_contacts = profile.getDefconContactList()
@@ -280,4 +282,3 @@ def checkDefconStatus( profile ):
 
 			# We've sent an alert to update the time stamp.
 			contact.last_alert_time_stamp = int( time.time() )
-		
