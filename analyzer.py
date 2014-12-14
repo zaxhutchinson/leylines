@@ -179,7 +179,7 @@ def purgeCurrentPathToTree( profile ):
 
 	# If the current defcon level is above the defcon threshold, do not
 	# send any data to the quad tree.
-	if(profile.getCurrentDefconLevel() <= profile.getDefconThreshold()):
+	if(profile.getCurrentDefconLevel() <= profile.getAverageDefconThreshold()):
 		return	
 
 	# If the defcon level is five, we don't need to worry too much
@@ -264,11 +264,12 @@ def friendCheck( profile, friend_profile ):
 			profile.setCurrentDefconLevel( 0 )
 
 def checkDisconnectStatus( profile ):
-	None
+	
+
 
 def checkTrackingStatus( profile ):
 
-	if(not profile.getIsTracking() ):
+	if( not profile.getIsTracking() ):
 		
 
 def checkDefconStatus( profile ):
@@ -283,7 +284,8 @@ def checkDefconStatus( profile ):
 		# Send alert and update time stamp
 		if( contact.defcon >= profile.getCurrentDefconLevel() and
 			(contact.last_alert_time_stamp + profile.getAlertFrequency()) <= now ) ):
-			alert.send_alert( profile.getPassword(), contact.email, contact.msg )
+			
+			alert.send_alert( profile.getPassword(), contact.addr, contact.msg )
 
 			# We've sent an alert to update the time stamp.
 			contact.last_alert_time_stamp = int( time.time() )

@@ -30,6 +30,7 @@ MSG_REFRESH = 'R'
 MSG_LOC = 'L'
 MSG_PREF = 'S'
 MSG_POS = 'G'
+MSG_INIT = 'I'
 
 DEFCON_1 = 0.1
 DEFCON_2 = 0.2

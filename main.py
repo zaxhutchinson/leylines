@@ -120,23 +120,28 @@ class Leylines:
 		# Also should check queues for unprocessed messages
 		self.log_file.close()
 
-	def listener(self):
+	def listenManager(self):
 		while(isRunning):
 			conn,addr = self.leysocket.accept()
-			msg = ""
-			while(True):
-				data = conn.recv(1024)
-				if not data:
-					break
-				else:
-					msg += data
-			
-			if(len(msg) > 0):
-				conn.sendall('OK')
-				self.dispatch_queue.put(msg)
-				self.dispatch_queue.task_done()
+
+			conn_thread = threading.Thread(target=self.listener(conn,addr))
+			conn_thread.start()
+
+	def listener(self,conn,addr):
+		msg = ""
+		while(True):
+			data = conn.recv(1024)
+			if not data:
+				break
 			else:
-				conn.sendall('KO')
+				msg += data
+		
+		if(len(msg) > 0):
+			conn.sendall('OK')
+			self.dispatch_queue.put( (conn,addr,msg) )
+			self.dispatch_queue.task_done()
+		else:
+			conn.sendall('KO')
 	
 	def dispatcher(self):
 		
@@ -146,28 +151,30 @@ class Leylines:
 		while(isRunning or (not self.dispatch_queue.empty()) ):
 			msg = self.dispatch_queue.get()
 			self.dispatch_queue.task_done()
-			typ_msg = msg.split('\n',1)
+			conn = msg[0]
+			addr = msg[1]
+			typ_msg = msg[2].split('\n',1)
 			typ = typ_msg[0]
 			msg = typ_msg[1]
 			
-			# TO-DO
-			# EXTRACT TYPE FROM MESSAGE
-
-			if( typ == config.MSG_TRACK ):
-				track = threading.Thread(target=self.rec_track(msg))
+			if( typ = config.MSG_INIT ):
+				init = threading.Thread(target=self.rec_init(msg,conn,addr))
+				init.start()
+			elif( typ == config.MSG_TRACK ):
+				track = threading.Thread(target=self.rec_track(msg,conn,addr))
 				track.start()
 			elif( typ == config.MSG_REFRESH ):
-				rec_refresh = threading.Thread(target=self.rec_refresh(msg))
-				rec_refresh.start()
+				refresh = threading.Thread(target=self.rec_refresh(msg,conn,addr))
+				refresh.start()
 			elif( typ == config.MSG_LOC ):
-				rec_loc = threading.Thread(target=self.rec_loc(msg))
-				rec_loc.start()
+				loc = threading.Thread(target=self.rec_loc(msg,conn,addr))
+				loc.start()
 			elif( typ == config.MSG_PREF ):
-				rec_pref = threading.Thread(target=self.rec_pref(msg))
-				rec_pref.start()
+				pref = threading.Thread(target=self.rec_pref(msg,conn,addr))
+				pref.start()
 			elif( typ == config.MSG_POS ):
-				rec_pos = threading.Thread(target = self.rec_pos(msg))
-				rec_pos.start()
+				pos = threading.Thread(target = self.rec_pos(msg,conn,addr))
+				pos.start()
 			else:
 				None # ERROR
 
@@ -178,52 +185,166 @@ class Leylines:
 
 	# The following functions are called by dispatcher depending on
 	# the type of message received.
-	
+
+	def rec_init(self, msg, conn, addr):
+		items = msg.split('\n')
+		userid = items[0]
+		info = items[1:]
+
+		if( k in self.loaded_profiles.keys() ):
+			conn.sendall("KO")
+			return -1
+		else:
+			if( len(info) == 3 ):
+				coord = misc.GPSCoord( float(info[0]), float(info[1]) )
+				data = misc.Data( int(info[2]), 0.0 )
+				self.loaded_profiles[userid] = profile.Profile( userid, coord, data )
+				conn.sendall("OK")
+			else:
+				conn.sendall("KO")
+				return -2 # ERROR, bad initial data
+
+					
 	# Searches for a corresponding UID and flips the tracking variable
 	# If tracking is turned off, the countdown is initiated. 
-	def rec_track(self, msg):
-		msg.rstrip('\n')
+	def rec_track(self, msg, conn, addr):
+		msg = msg.strip('\n')
 		for k,v in self.loaded_profiles.items():
 			if (k == msg):
-				booo = True
-				booo = v.profile.flipisTracking()
-				if(not booo):
-					#Start the final countdown
-				else:
-					
+				v.profile.flipisTracking()
+				conn.sendall("OK")
 			else:
 				self.log("Error: User ID not found")
+				conn.sendall("KO")
 				
 		# Will have to return an OK here eventually.
 		
-	''' Should return the status of the user who queried it.
-	def rec_refresh(self, msg):
+	# Should return the status of the user who queried it.
+	def rec_refresh(self, msg, conn, addr):
 		msg.rstrip('\n')
 		for k,v in self.loaded_profiles.items():
 			if (k == msg[0]):
-				stats = v.profile.getCurrentDefconLevel()
-				str_ stats = str(stats)
-				return "Current defcon level is " + str_stats
+				stats = v.getCurrentDefconLevel()
+				conn.sendall("OK")
+				#conn.sendall("Current defcon level is: " + str(str_stats))
 				
 	
 	#Our newest neglected child
 	#Should receive latitude, longitude, day of the week, time of arrival and depature
 	#and save them into some sort of class or whatever.
-	def rec_loc(self, msg):
-		None
-	'''
-	def rec_pref(self, msg):
-		q = msg[0]
-		msg_Mod = msg[1:len(msg)-1].split('\n', -1)
-	
-		for k,v in self.loaded_profiles.items():
-			if(k == q)
-			
-	def rec_pos(self, msg):
-		None
+	def rec_loc(self, msg, conn, addr):
+		conn.sendall("OK")
 
-	def rec_init(self,msg):
+	def rec_pref(self, msg, conn, addr):
+		msg_split = msg.split('/n')
+		userid = msg_split[0]
+		prefs = msg_split[1:]
+
+		found_uid = False
+
+		for uid,profile in self.loaded_profiles.items():
+			if(uid == userid):
+
+				found_uid = True
+
+				contact1 = profile.Contact()
+				contact2 = profile.Contact()
+				contact3 = profile.Contact()
 		
+				for p in prefs:
+					split_pref = p.split('=')
+					k = split_pref[0]
+					v = split_pref[1]
+
+					if( k == "pref_key_alert_frequency" ):
+						profile.setAlertFrequency( int(v) )
+					elif( k == "pref_key_gps_collect_frequency" ):
+						profile.setGPSCollectionFrequency( int(v) )
+					elif( k == "pref_key_gps_send_frequency" ):
+						profile.setGPSSendFrequency( int(v) )
+					
+					elif( k == "pref_key_distance_deviation_setting"):
+						profile.setMaxDistanceToKnownQuad( int(v) )
+					elif( k == "pref_key_distance_importance" ):
+						profile.setWeightDistanceToKnownQuad( int(v) )
+
+					elif( k == "pref_key_time_deviation_setting" ):
+						profile.setMaxTimeOnUnknownPath( int(v) )
+					elif( k == "pref_key_time_importance" ):
+						profile.setWeightTimeOnUnknownPath( int(v) )
+
+					elif( k == "pref_key_distance_deviation_total_setting" ):
+						profile.setMaxDistanceOfUnknownPath( int(v) )
+					elif( k == "pref_key_distance_total_importance" ):
+						profile.setWeightDistanceOfUnknownPath( int(v) )
+
+					elif( "contact1" in k ):
+						if( k == "pref_key_contact1_type_setting" ):
+							contact1.typ = v
+						elif( k == "pref_key_contact1_info_setting" ):
+							contact1.addr = v
+						elif( k == "pref_key_contact1_alert_setting" ):
+							contact1.defcon = int( v )
+					elif( "contact2" in k):
+						if( k == "pref_key_contact2_type_setting" ):
+							contact2.typ = v
+						elif( k == "pref_key_contact2_info_setting" ):
+							contact2.addr = v
+						elif( k == "pref_key_contact2_alert_setting" ):
+							contact2.defcon = int( v )
+					elif( "contact3" in k):
+						if( k == "pref_key_contact3_type_setting" ):
+							contact3.typ = v
+						elif( k == "pref_key_contact3_info_setting" ):
+							contact3.addr = v
+						elif( k == "pref_key_contact3_alert_setting" ):
+							contact3.defcon = int( v )
+
+
+				profile.addContactToDefconContactList( contact1 )
+				profile.addContactToDefconContactList( contact2 )
+				profile.addContactToDefconContactList( contact3 )
+					
+				# We found the user's profile in question
+				# so break...no need to check the rest.
+				if found_uid:
+					break;
+
+		if not found_uid:
+			conn.sendall("KO")
+		else:
+			conn.sendall("OK")				
+			
+	def rec_pos(self, msg, conn, addr):
+		msg_split = msg.split('/n')
+		userid = msg_split[0]
+		items = msg_split[1:]
+
+		found_uid = False
+
+		for k,v in self.loaded_profiles.items():
+			if( k == userid ):
+				new_lat = 0.0
+				new_long = 0.0
+				new_time = 0.0
+				count = 0
+				for line in items:
+					if( count == 0 ):
+						new_lat = float( line )
+						count += 1
+					elif( count == 1):
+						new_long = float( line )
+						count += 1
+					elif( count == 2):
+						new_time = int( line )
+						count += 1
+
+					if( count == 3 ):
+						coord = misc.GPSCoord( new_lat, new_long )
+						data = misc.Data( new_time, 0.0 )
+
+						v.addNewUnexaminedLocation( coord, data )
+
 
 	def make_new_log(self):
 		self.log_file.close()
