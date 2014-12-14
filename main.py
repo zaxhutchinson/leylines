@@ -25,7 +25,7 @@ class Leylines:
 		self.log_file = open( ('leylines_' + time.time() + '.log'), 'w')
 
 		# Socket
-		self.leysocket = socket.socket(socket.AF.INET, socket.SOCK_STREAM)
+		self.leysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.leysocket.bind((config.HOST,config.PORT))
 		self.leysocket.listen(100)
 
@@ -132,9 +132,12 @@ class Leylines:
 					msg += data
 			
 			if(len(msg) > 0):
+				conn.sendall('OK')
 				self.dispatch_queue.put(msg)
 				self.dispatch_queue.task_done()
-
+			else:
+				conn.sendall('KO')
+	
 	def dispatcher(self):
 		
 		# The dispatcher should continue to run until it has been asked
@@ -143,23 +146,28 @@ class Leylines:
 		while(isRunning or (not self.dispatch_queue.empty()) ):
 			msg = self.dispatch_queue.get()
 			self.dispatch_queue.task_done()
-			#typ_msg = msg.split('\n',1)
+			typ_msg = msg.split('\n',1)
+			typ = typ_msg[0]
+			msg = typ_msg[1]
 			
 			# TO-DO
 			# EXTRACT TYPE FROM MESSAGE
 
-			if( typ == config.MSG_AWK ):
-				awk = threading.Thread(target=self.rec_awk(msg))
-				awk.start()
-			elif( typ == config.MSG_INIT ):
-				rec_init = threading.Thread(target=self.rec_init(msg))
-				rec_init.start()
+			if( typ == config.MSG_TRACK ):
+				track = threading.Thread(target=self.rec_track(msg))
+				track.start()
+			elif( typ == config.MSG_REFRESH ):
+				rec_refresh = threading.Thread(target=self.rec_refresh(msg))
+				rec_refresh.start()
+			elif( typ == config.MSG_LOC ):
+				rec_loc = threading.Thread(target=self.rec_loc(msg))
+				rec_loc.start()
 			elif( typ == config.MSG_PREF ):
 				rec_pref = threading.Thread(target=self.rec_pref(msg))
 				rec_pref.start()
-			elif( typ == config.MSG_GPS ):
-				rec_gps = threading.Thread(target=self.rec_gps(msg))
-				rec_gps.start()
+			elif( typ == config.MSG_POS ):
+				rec_pos = threading.Thread(target = self.rec_pos(msg))
+				rec_pos.start()
 			else:
 				None # ERROR
 
@@ -170,18 +178,52 @@ class Leylines:
 
 	# The following functions are called by dispatcher depending on
 	# the type of message received.
-	def rec_awk(self, msg):
-		None
 	
-	def rec_init(self, msg):
+	# Searches for a corresponding UID and flips the tracking variable
+	# If tracking is turned off, the countdown is initiated. 
+	def rec_track(self, msg):
+		msg.rstrip('\n')
+		for k,v in self.loaded_profiles.items():
+			if (k == msg):
+				booo = True
+				booo = v.profile.flipisTracking()
+				if(not booo):
+					#Start the final countdown
+				else:
+					
+			else:
+				self.log("Error: User ID not found")
+				
+		# Will have to return an OK here eventually.
+		
+	''' Should return the status of the user who queried it.
+	def rec_refresh(self, msg):
+		msg.rstrip('\n')
+		for k,v in self.loaded_profiles.items():
+			if (k == msg[0]):
+				stats = v.profile.getCurrentDefconLevel()
+				str_ stats = str(stats)
+				return "Current defcon level is " + str_stats
+				
+	
+	#Our newest neglected child
+	#Should receive latitude, longitude, day of the week, time of arrival and depature
+	#and save them into some sort of class or whatever.
+	def rec_loc(self, msg):
 		None
-
+	'''
 	def rec_pref(self, msg):
+		q = msg[0]
+		msg_Mod = msg[1:len(msg)-1].split('\n', -1)
+	
+		for k,v in self.loaded_profiles.items():
+			if(k == q)
+			
+	def rec_pos(self, msg):
 		None
 
-	def rec_gps(self, msg):
-		None
-
+	def rec_init(self,msg):
+		
 
 	def make_new_log(self):
 		self.log_file.close()
