@@ -46,11 +46,16 @@ class Preferences:
 # The status of the user
 class Status:
 	def __init__(self):
-		self.current_defcon = 5
+		self.current_defcon = 0
 		self.defcon_history = deque(( self.current_defcon,int(time.time()) ))
 		self.unknown_path_total_distance = 0.0
 		self.time_stamp_last_known_location = 0.0
 		self.danger_level = 0.0
+		#True if the user is being tracked. False otherwise.
+		self.isTracking = True 
+		#Saves the time that the tracker was disabled.
+		#Used to determine how long the tracker was disabled.
+		self.time_Disabled = 0.0
 
 		self.alert_has_been_sent = False
 
@@ -188,6 +193,19 @@ class Profile:
 			return True
 		else
 			return False
+
+	def getisTracking(self):
+		return self.status.isTracking
+	def setisTracking(self, T):
+		self.status.isTracking = T
+	def flipTracking(self):
+		self.status.isTracking = not self.status.isTracking
+		return self.status.isTracking
+		
+	def getTime_disabled(self):
+		return self.status.time_Disabled
+	def setTime_disabled(self, Td):
+		self.status.time_Disabled = Td
 
 	@classmethod
 	def load(cls, filename):
