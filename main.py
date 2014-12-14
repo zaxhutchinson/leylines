@@ -25,7 +25,7 @@ class Leylines:
 		self.log_file = open( ('leylines_' + time.time() + '.log'), 'w')
 
 		# Socket
-		self.leysocket = socket.socket(socket.AF.INET, socket.SOCK_STREAM)
+		self.leysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.leysocket.bind((config.HOST,config.PORT))
 		self.leysocket.listen(100)
 
@@ -221,6 +221,9 @@ class Leylines:
 			
 	def rec_pos(self, msg):
 		None
+
+	def rec_init(self,msg):
+		
 
 	def make_new_log(self):
 		self.log_file.close()
