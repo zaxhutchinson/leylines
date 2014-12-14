@@ -70,42 +70,32 @@ def examineNewLocation( profile ):
 			distance_to_known_location = profile.getDistanceToKnownLocation(new_loc[0])
 
 			# Calculate the relative distance deviation
-			raw_deviation_distance_known_location = float(distance_to_known_quad) / 
-												float(profile.getMaxDistanceToKnownQuad())
+			raw_deviation_distance_known_location = float(distance_to_known_quad) / float(profile.getMaxDistanceToKnownQuad())
 
 			# Get previous location added to current path
 			previous_location = profile.getMostRecentLocationInCurrentPath()
 			
 			# Calculate and update total distance of this unknown path
-			present_dist = profile.getCurrentUnknownDistance() +
-							distanceBetweenTwoPoints(new_loc[0], previous_location[0])
+			present_dist = profile.getCurrentUnknownDistance() + distanceBetweenTwoPoints(new_loc[0], previous_location[0])
+			
 			profile.setUnknownDistance(present_dist)
 
 			# Calculate deviation for total distance
-			raw_deviation_total_distance = float(present_dist) /
-										float(profile.getMaxDistanceOfUnknownPath()
+			raw_deviation_total_distance = float(present_dist) / float(profile.getMaxDistanceOfUnknownPath())
 
 			# Get time on unknown path. In seconds...probably.
 			time_on_unknown_path = new_loc[1].time - profile.getCurrentUnknownPathTimeStamp()
 
 			# Calc the time deviation
-			raw_deviation_time = float(time_on_unknown_path) /
-								float(profile.getMaxTimeOnUnknownPath())
+			raw_deviation_time = float(time_on_unknown_path) / float(profile.getMaxTimeOnUnknownPath())
 
-			deviation_relative_distance = raw_deviation_relative_distance *
-										profile.getWeightDistanceToKnownQuad()
-			deviation_total_distance = raw_deviation_total_distance *
-										profile.getWeightDistanceOfUnknownPath()
-			deviation_total_time = raw_deviation_time *
-								profile.getWeightTimeOnUnknownPath()
+			deviation_relative_distance = raw_deviation_relative_distance *	profile.getWeightDistanceToKnownQuad()
+			deviation_total_distance = raw_deviation_total_distance * profile.getWeightDistanceOfUnknownPath()
+			deviation_total_time = raw_deviation_time *	profile.getWeightTimeOnUnknownPath()
 
-			total_weight = profile.getWeightDistanceToKnownQuad() +
-						profile.getWeightDistanceOfUnknownPath() +
-						profile.getWeightTimeOnUnknownPath()
+			total_weight = profile.getWeightDistanceToKnownQuad() + profile.getWeightDistanceOfUnknownPath() + profile.getWeightTimeOnUnknownPath()
 			
-			total_deviation = (deviation_relative_distance +
-							deviation_total_distance +
-							deviation_time) / total_weight
+			total_deviation = (deviation_relative_distance + deviation_total_distance + deviation_time) / total_weight
 
 		profile.appendToCurrentPathFromParts( new_loc[0], new_loc[1], total_deviation )
 
@@ -134,8 +124,7 @@ def examineCurrentPath( profile ):
 			temp_deque.append(last_loc)
 
 			# Get the time in secs of ( last_time - GPS Send Freq )
-			max_time = last_loc[1].time - 
-				(config.DANGER_LEVEL_TIME_BLOCK * profile.getGPSSendFrequency())
+			max_time = last_loc[1].time - (config.DANGER_LEVEL_TIME_BLOCK * profile.getGPSSendFrequency())
 
 			# Loop while we haven't reached the beginning of the queue
 			# and the time of the present element we're inspecting is
@@ -143,17 +132,15 @@ def examineCurrentPath( profile ):
 			while( True ):
 				#Get next oldest location
 				last_loc = profile.getCurrentPathNewestLocation()
-					# If it falls within the GPS send time...
-					if(last_loc[1].time < max_time):
+				# If it falls within the GPS send time...
+				if(last_loc[1].time < max_time):
 
-						# Add it to the temp queue
-						temp_deque.append(last_loc)
-					
-					else:
-						profile.appendToCurrentPathFromWhole(last_loc)
-						break
-		else:
-			break
+					# Add it to the temp queue
+					temp_deque.append(last_loc)
+				
+				else:
+					profile.appendToCurrentPathFromWhole(last_loc)
+					break
 		
 		# Non-local storage for the loop
 		number_inspected = 0
@@ -204,8 +191,6 @@ def purgeCurrentPathToTree( profile ):
 
 				oldest_loc = profile.getCurrentPathOldestLocation()	
 
-		else:
-			break
 	# Above 1 but below threshold:
 	# Only purge data more than 24 hours old.
 	else:
@@ -218,9 +203,6 @@ def purgeCurrentPathToTree( profile ):
 				profile.dumpLocation(oldest_loc)
 
 				oldest_loc = profile.getCurrentPathOldestLocation()	
-
-		else:
-			break
 
 # We check the distance between our last known coord that is either
 # in the current path or last entry into the tree, against our friend's
@@ -253,7 +235,7 @@ def friendCheck( profile, friend_profile ):
 	else:
 		last_known_friend_coord = friend_profile.current_path[size_cur_friend_path]
 
-	if ( (last_known_coord not None) and (last_known_friend_coord not None) ):
+	if ( (last_known_coord != None) and (last_known_friend_coord != None) ):
 		distance = distanceBetweenTwoPoints( last_known_coord,
 							last_known_friend_coord )
 
@@ -264,13 +246,13 @@ def friendCheck( profile, friend_profile ):
 			profile.setCurrentDefconLevel( 0 )
 
 def checkDisconnectStatus( profile ):
-	
+	None
 
 
 def checkTrackingStatus( profile ):
 
 	if( not profile.getIsTracking() ):
-		
+		None
 
 def checkDefconStatus( profile ):
 	defcon_contacts = profile.getDefconContactList()
@@ -282,8 +264,7 @@ def checkDefconStatus( profile ):
 		# AND
 		# the last altert plus freq is less than the present time,
 		# Send alert and update time stamp
-		if( contact.defcon >= profile.getCurrentDefconLevel() and
-			(contact.last_alert_time_stamp + profile.getAlertFrequency()) <= now ) ):
+		if( contact.defcon >= profile.getCurrentDefconLevel() and ((contact.last_alert_time_stamp + profile.getAlertFrequency()) <= now ) ):
 			
 			alert.send_alert( profile.getPassword(), contact.addr, contact.msg )
 

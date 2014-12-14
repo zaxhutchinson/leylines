@@ -20,6 +20,8 @@ TIME_BLOCK = 15
 # recent GPS entries for a new danger level computation. 
 DANGER_LEVEL_TIME_BLOCK = 2.0
 
+LOG_DIR = 'logs'
+
 ########################################
 ### DO NOT CHANGE VALUES ONCE IN USE ###
 HOST = ''
@@ -31,6 +33,7 @@ MSG_LOC = 'L'
 MSG_PREF = 'S'
 MSG_POS = 'G'
 MSG_INIT = 'I'
+MSG_DIE = '666'
 
 DEFCON_1 = 0.1
 DEFCON_2 = 0.2

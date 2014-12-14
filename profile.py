@@ -242,7 +242,7 @@ class Profile:
 
 	def getPassword(self):
 		return self.preferences.password
-	def setPassword(self, new_password)
+	def setPassword(self, new_password):
 		self.preferences.password = password
 	# ===============================================================
 	# STATUS GET/SET
@@ -269,7 +269,7 @@ class Profile:
 	def isDefconThresholdReached(self):
 		if( self.getCurrentDefconLevel() >= self.getDefconThreshold() ):
 			return True
-		else
+		else:
 			return False
 
 	def getIsTracking(self):
