@@ -264,7 +264,12 @@ def friendCheck( profile, friend_profile ):
 			profile.setCurrentDefconLevel( 0 )
 
 def checkDisconnectStatus( profile ):
-	
+	None
+
+def checkTrackingStatus( profile ):
+
+	if(not profile.getIsTracking() ):
+		
 
 def checkDefconStatus( profile ):
 	defcon_contacts = profile.getDefconContactList()
