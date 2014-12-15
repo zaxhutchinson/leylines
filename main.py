@@ -38,6 +38,8 @@ class Leylines:
 		self.isRunning = True
 		self.isDone = False
 
+		self.open_connections = deque()
+
 		# Socket
 		self.leysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		#self.leysocket.setblocking(1) # Set to blocking
@@ -45,7 +47,7 @@ class Leylines:
 		self.leysocket.bind((config.HOST,config.PORT))
 		self.leysocket.listen(100)
 
-		print("LEYLINES listening on port: " + str(config.PORT))
+		print("LEYLINES: listening on port " + str(config.PORT))
 
 		self.start()
 
@@ -96,6 +98,11 @@ class Leylines:
 
 		print("LEYLINES: listenManger started")
 
+		self.messenger = threading.Thread(target=self.messageManager)
+		self.messenger.start()
+
+		print("LEYLINES: messenger started")
+
 		self.dispatcher = threading.Thread(target=self.dispatcher)
 		self.dispatcher.start()
 
@@ -125,7 +132,7 @@ class Leylines:
 		self.isRunning = False
 
 	def run(self):
-		
+		print("LEYLINES: running")
 		while(not self.isDone):
 
 			# Do nothing unless there are loaded profiles.
@@ -162,9 +169,10 @@ class Leylines:
 				time.sleep(1)
 
 
-		while( threading.activeCount > 1 ):
+		while( threading.activeCount() > 1 ):
 			# We wait for the other threads handling messages
 			# to finish. Sleep for a sec, check again.
+			# print("LEYLINES: " + str(threading.activeCount()) + " threads left")
 			time.sleep(1)
 
 		# Everything is stopped. No, new information coming in.
@@ -174,6 +182,8 @@ class Leylines:
 
 		# Also should check queues for unprocessed messages
 		self.log_file.close()
+		
+		print("LEYLINES: offline")
 
 	def listenManager(self):
 		print("LIS START")
@@ -190,26 +200,40 @@ class Leylines:
 
 			if( conn != None and addr != None ):
 				print("LEYLINES: connection open to " + str(addr))
-				conn_thread = threading.Thread(target=self.listener(conn,addr))
-				conn_thread.start()
+				#conn_thread = threading.Thread(target=self.listener(conn,addr))
+				#conn_thread.start()
+				self.open_connections.append((conn,addr))
 		print("LIS END")
 
-	def listener(self,conn,addr):
-		msg = ""
-		while(True):
-			data = conn.recv(1024)
-			if not data:
-				break
-			else:
-				msg += data
-		
-		if(len(msg) > 0):
-			print('LEYLINES: msg received')
-			conn.sendall('OK')
-			self.dispatch_queue.put( (conn,addr,msg) )
-			self.dispatch_queue.task_done()
-		else:
-			conn.sendall('KO')
+	def messageManager(self):
+		print("MES START")
+		while(self.isListening or ( len(self.open_connections) > 0 ) ):
+			if( len(self.open_connections) > 0 ):
+				conn,addr = self.open_connections.popleft()
+				print("LEYLINES: handling connection " + str(addr))
+				msg = ""
+				while(True):
+					print("LEYLINES: passing message")
+					try:
+						data = conn.recv(1024)
+						if data:
+							msg += data
+					except(socket.timeout, socket.error):
+						print("LEYLINES: breaking 0")
+						break
+					else:
+						if len(msg) == 0:
+							print("LEYLINES: breaking 1")
+							conn.sendall("KO")
+							break
+						else:
+							print('LEYLINES: msg received')
+							conn.sendall('OK')
+							self.dispatch_queue.put( (conn,addr,msg),False )
+							self.dispatch_queue.task_done()
+							break
+			time.sleep(1)
+		print("MES END")
 	
 	def dispatcher(self):
 		print("DIS START")
@@ -221,10 +245,13 @@ class Leylines:
 			msg = None
 			try:
 				msg = self.dispatch_queue.get(False)
+				#self.dispatch_queue.task_done()
 			except (Queue.Empty):
 				None
 			if( msg != None ):
-				self.dispatch_queue.task_done()
+				print("LEYLINES: dispatching message")
+
+				#self.dispatch_queue.task_done()
 				conn = msg[0]
 				addr = msg[1]
 				typ_msg = msg[2].split('\n',1)
@@ -258,8 +285,8 @@ class Leylines:
 				elif( typ == config.MSG_DIE ):
 					print("LEYLINES: stop msg received.")
 					if(msg.strip() == "IAmCompletelySurroundedByNoBeer"):	
-						self.stop()
 						conn.sendall("STOPPING LEYLINES\n")
+						self.stop()
 					else:
 						conn.sendall("IGNORING STOP COMMAND\n")
 				else:
@@ -447,7 +474,7 @@ if __name__ == "__main__":
 	l = None
 	try:
 		l = Leylines()
-		l.start()
+		#l.start()
 	except (KeyboardInterrupt, SystemExit):
 		if( l != None ):
 			l.stop()
