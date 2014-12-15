@@ -3,6 +3,7 @@
 import socket
 
 stop_msg = '666\nIAmCompletelySurroundedByNoBeer'
+init_msg = 'I\n1234567890\n40.765411\n-73.993610\n1'
 
 ADDRESS = 'leylines.duckdns.org:65006'
 HOST = 'leylines.duckdns.org'
@@ -14,6 +15,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #s.connect((HOST,PORT))
 s.connect((HOST_LOCAL,PORT_LOCAL))
 s.sendall (stop_msg)
+#s.sendall(init_msg)
 data = s.recv(1024)
 print(data)
 s.close()

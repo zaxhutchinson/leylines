@@ -1,9 +1,28 @@
+######################################################################
+# Project Leylines
+# Analyzer
+# 
+# Contributors: 
+#	Zachary Hutchinson
+#	Tamel Nash
+#	Travis Geeting
+#	Cameron Rivera
+#
+# Analyzer consists of a series of independent functions that handle
+# the analysis of profile and path states, updating danger levels,
+# defcon levels and sending alerts.
+#
+# See individual functions for further descriptions.
+#######################################################################
+
 import time
 import math
 import config
 import alert
 from collections import deque
 
+#######################################################################
+# Helper functions for GPS and time differences
 def toDegrees( radians ):
 	return radians * 180.0 / config.PI
 
@@ -33,10 +52,11 @@ def calculateRelativeDistanceDeviation( max_dist, dist ):
 	return max_dist - dist
 def calculateTotalDistanceDeviation( max_dist, dist ):
 	return max_dist - dist
-
+########################################################################
 
 # Examines the unexamined_path of the profile and adds it to the
-# current_path.
+# current_path. It's main job is to calculate the deviation number
+# of each individual logged location with respect to distance and time.
 def examineNewLocation( profile ):
 
 	# Since this is a while something loop, we need to have a max number of
@@ -44,7 +64,8 @@ def examineNewLocation( profile ):
 	# if someone's app continues to update the queue with GPS coords. 
 	count = 0
 
-	while( (not profile.unexamined_path.empty()) and count < 10):
+	# Process a max of ten unexamined locations
+	while( ( len(profile.unexamined_path) > 0 ) and count < 10):
 
 		new_loc = profile.unexamined_path.get()
 		
@@ -89,10 +110,12 @@ def examineNewLocation( profile ):
 			# Calc the time deviation
 			raw_deviation_time = float(time_on_unknown_path) / float(profile.getMaxTimeOnUnknownPath())
 
+			# Get each deviation adjusted by user set weight
 			deviation_relative_distance = raw_deviation_relative_distance *	profile.getWeightDistanceToKnownQuad()
 			deviation_total_distance = raw_deviation_total_distance * profile.getWeightDistanceOfUnknownPath()
 			deviation_total_time = raw_deviation_time *	profile.getWeightTimeOnUnknownPath()
 
+			# Total possible weight when raw_deviations total 1.0
 			total_weight = profile.getWeightDistanceToKnownQuad() + profile.getWeightDistanceOfUnknownPath() + profile.getWeightTimeOnUnknownPath()
 			
 			total_deviation = (deviation_relative_distance + deviation_total_distance + deviation_time) / total_weight
@@ -100,12 +123,12 @@ def examineNewLocation( profile ):
 		profile.appendToCurrentPathFromParts( new_loc[0], new_loc[1], total_deviation )
 
 		# Unlock Queue
-		profile.unexamined_path.task_done()
+		# profile.unexamined_path.task_done()
 
 		# Last thing
 		count += 1
 
-	if( profile.unexamined_path.empty() ):
+	if( len(profile.unexamined_path) == 0 ):
 		profile.updated = False
 
 # 			

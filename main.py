@@ -154,12 +154,12 @@ class Leylines:
 					analyzer.examineCurrentPath( next_profile )
 
 					# Check friend levels
-					for friend in next_profile.friend_list:
+					for friend in next_profile.getFriendList():
 						None
 
 					# If needed, purge all or path of the current path
 					# to the quad tree.
-					purgeCurrentPathToTree( next_profile )
+					analyzer.purgeCurrentPathToTree( next_profile )
 
 				# Add the uid to the end of the queue
 				self.loaded_profiles_uid_queue.append( next_uid )
@@ -203,6 +203,8 @@ class Leylines:
 				#conn_thread = threading.Thread(target=self.listener(conn,addr))
 				#conn_thread.start()
 				self.open_connections.append((conn,addr))
+
+		self.leysocket.close()
 		print("LIS END")
 
 	def messageManager(self):
@@ -310,7 +312,7 @@ class Leylines:
 		userid = items[0]
 		info = items[1:]
 
-		if( k in self.loaded_profiles.keys() ):
+		if( userid in self.loaded_profiles.keys() ):
 			conn.sendall("KO")
 			return -1
 		else:

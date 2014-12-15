@@ -51,13 +51,13 @@ class Preferences:
 		self.pref_key_gps_send_frequency=900
 
 		# Enables/disables all tracker settings
-		self.pref_key_tracker_settings=false
+		self.pref_key_tracker_settings=False
 		# Enables/disables inactivity tracking
-		self.pref_key_tracker_inactive_setting=false
+		self.pref_key_tracker_inactive_setting=False
 		self.pref_key_tracker_inactive_duration_setting=604800
 		self.pref_key_tracker_disabled_duration_setting=3600
 
-		self.pref_key_tracker_response_setting=false
+		self.pref_key_tracker_response_setting=False
 		self.pref_key_tracker_response_misses_setting=3
 	
 		self.pref_key_tracker_settings_alert=""
@@ -65,35 +65,35 @@ class Preferences:
 		self.pref_key_lifestyle_setting=0
 		self.pref_key_sensitivity_setting=0
 
-		self.pref_key_battery_settings=false
+		self.pref_key_battery_settings=False
 		self.pref_key_battery_level_settin=20
 		self.pref_key_battery_level_alert=""
 		self.pref_key_battery_importance=0.5
 
 		# MAX DISTANCE TO KNOWN QUAD
-		self.pref_key_distance_settings=false
+		self.pref_key_distance_settings=False
 		self.pref_key_distance_importance=0.5
 		self.pref_key_distance_deviation_setting=100
 		self.pref_key_distance_deviation_alert=""
 
 		# MAX TOTAL DISTANCE OF UNKNOWN PATH
-		self.pref_key_distance_total_settings=false
+		self.pref_key_distance_total_settings=False
 		self.pref_key_distance_total_importance=0.5
 		self.pref_key_distance_deviation_total_setting=100
 		self.pref_key_distance_deviation_total_alert=""
 		
-		self.pref_key_location_settings=false
+		self.pref_key_location_settings=False
 		self.pref_key_location_importance=0.5
 		self.pref_key_location_distance_setting=1000
 		self.pref_key_location_time_setting=3600
 		self.pref_key_location_settings_alert=""
 
-		self.pref_key_time_settings=false
+		self.pref_key_time_settings=False
 		self.pref_key_time_importance=0.5
 		self.pref_key_time_deviation_setting=10800
 		self.pref_key_time_deviation_alert=""
 		
-		self.pref_key_tracker_disabled_setting=false
+		self.pref_key_tracker_disabled_setting=False
 
 		#pref_key_contact3_alert_setting=3
 		#pref_key_contact2_alert_setting=3
@@ -168,12 +168,12 @@ class Profile:
 		self.uid = uid
 		self.first_name = first_name
 		self.last_name = last_name
-		self.tree = QuadTree(coord, data)
+		self.tree = quadtree.QuadTree(coord, data)
 
 		self.preferences = Preferences()
 
 		self.current_path = deque()
-		self.unexamined_path = Queue.Queue()
+		self.unexamined_path = deque()
 
 		self.status = Status()
 		self.updated = True
@@ -230,6 +230,8 @@ class Profile:
 	def setGPSSendFrequency(self, time):
 		self.preferences.pref_key_gps_send_frequency = time
 
+	def getFriendList(self):
+		return self.preferences.friend_list
 	def getFriendRange(self):
 		return self.preferences.friend_range
 	def setFriendRange(self, new_range):
