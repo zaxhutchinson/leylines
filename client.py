@@ -2,8 +2,8 @@
 
 import socket
 
-HOST = '146.95.40.221'  # remote host 
-PORT = 50007           # This port must match the server side number
+HOST = 'leylines.duckdns.org'  # remote host 
+PORT = 65006           # This port must match the server side number
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 

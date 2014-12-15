@@ -9,11 +9,13 @@ import misc
 import Queue
 import threading
 import os
+import sys
 from collections import deque
 
 class Leylines:
 	def __init__(self):
-
+		
+		print("LEYLINES: initiated")
 		# Holds the profiles currently loaded in a dictionary
 		# Key = uid, value is the profile
 		self.loaded_profiles = {}
@@ -42,6 +44,8 @@ class Leylines:
 		self.leysocket.settimeout(1) # Block for one sec
 		self.leysocket.bind((config.HOST,config.PORT))
 		self.leysocket.listen(100)
+
+		print("LEYLINES listening on port: " + str(config.PORT))
 
 		self.start()
 
@@ -85,11 +89,17 @@ class Leylines:
 
 	def start(self):
 
+		print("LEYLINES: starting")
+
 		self.listenManager = threading.Thread(target=self.listenManager)
 		self.listenManager.start()
 
+		print("LEYLINES: listenManger started")
+
 		self.dispatcher = threading.Thread(target=self.dispatcher)
 		self.dispatcher.start()
+
+		print("LEYLINES: dispatcher started")
 
 		try:
 			self.run()
@@ -98,20 +108,20 @@ class Leylines:
 			raise
 
 	def stop(self):
-		print("STOPPING LEY LINES")
+		print("LEYLINES: stopping")
 
-		print("STOP LISTENING")
+		print("LEYLINES: no longer listening")
 		self.isListening = False
 
-		print("STORE ALL LOADED PROFILES")
+		print("LEYLINES: saving profiles")
 		for uid in self.loaded_profiles.keys():
 			self.storeProfile(uid)
 
-		print("CLOSE LOG FILE")
+		print("LEYLINES: closing log file")
 		# Also should check queues for unprocessed messages
 		self.log_file.close()
 
-		print("IS RUNNING = FALSE")
+		print("LEYLINES: isRunning = false")
 		self.isRunning = False
 
 	def run(self):
@@ -179,6 +189,7 @@ class Leylines:
 				raise
 
 			if( conn != None and addr != None ):
+				print("LEYLINES: connection open to " + str(addr))
 				conn_thread = threading.Thread(target=self.listener(conn,addr))
 				conn_thread.start()
 		print("LIS END")
@@ -193,6 +204,7 @@ class Leylines:
 				msg += data
 		
 		if(len(msg) > 0):
+			print('LEYLINES: msg received')
 			conn.sendall('OK')
 			self.dispatch_queue.put( (conn,addr,msg) )
 			self.dispatch_queue.task_done()
@@ -220,24 +232,31 @@ class Leylines:
 				msg = typ_msg[1]
 				
 				if( typ == config.MSG_INIT ):
+					print("LEYLINES: init msg received")
 					init = threading.Thread(target=self.rec_init(msg,conn,addr))
 					init.start()
 				elif( typ == config.MSG_TRACK ):
+					print("LEYLINES: track msg received")
 					track = threading.Thread(target=self.rec_track(msg,conn,addr))
 					track.start()
 				elif( typ == config.MSG_REFRESH ):
+					print("LEYLINES: refresh msg received")
 					refresh = threading.Thread(target=self.rec_refresh(msg,conn,addr))
 					refresh.start()
 				elif( typ == config.MSG_LOC ):
+					print("LEYLINES: location msg received")
 					loc = threading.Thread(target=self.rec_loc(msg,conn,addr))
 					loc.start()
 				elif( typ == config.MSG_PREF ):
+					print("LEYLINES: pref msg received")
 					pref = threading.Thread(target=self.rec_pref(msg,conn,addr))
 					pref.start()
 				elif( typ == config.MSG_POS ):
+					print("LEYLINES: position msg received")
 					pos = threading.Thread(target = self.rec_pos(msg,conn,addr))
 					pos.start()
 				elif( typ == config.MSG_DIE ):
+					print("LEYLINES: stop msg received.")
 					if(msg.strip() == "IAmCompletelySurroundedByNoBeer"):	
 						self.stop()
 						conn.sendall("STOPPING LEYLINES\n")
@@ -424,6 +443,7 @@ class Leylines:
 
 
 if __name__ == "__main__":
+	sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 	l = None
 	try:
 		l = Leylines()
