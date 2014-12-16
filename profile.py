@@ -72,18 +72,18 @@ class Preferences:
 
 		# MAX DISTANCE TO KNOWN QUAD
 		self.pref_key_distance_settings=False
-		self.pref_key_distance_importance=0.5
+		self.pref_key_distance_importance=10
 		self.pref_key_distance_deviation_setting=100
 		self.pref_key_distance_deviation_alert=""
 
 		# MAX TOTAL DISTANCE OF UNKNOWN PATH
 		self.pref_key_distance_total_settings=False
-		self.pref_key_distance_total_importance=0.5
+		self.pref_key_distance_total_importance=10
 		self.pref_key_distance_deviation_total_setting=100
 		self.pref_key_distance_deviation_total_alert=""
 		
 		self.pref_key_location_settings=False
-		self.pref_key_location_importance=0.5
+		self.pref_key_location_importance=10
 		self.pref_key_location_distance_setting=1000
 		self.pref_key_location_time_setting=3600
 		self.pref_key_location_settings_alert=""
@@ -125,37 +125,37 @@ class Status:
 
 		self.alert_has_been_sent = False
 
-	def getDefconForDangerLevel(self, danger_level):
+	def getDefconForDangerLevel(self):
 		
 		defcon = 0
 
-		if( danger_value >= config.DEFCON_1 ):
+		if( self.danger_level >= config.DEFCON_1 ):
 			defcon = 1
-		elif( danger_value >= config.DEFCON_2 ):
+		elif( self.danger_level >= config.DEFCON_2 ):
 			defcon = 2
-		elif( danger_value >= config.DEFCON_3 ):
+		elif( self.danger_level >= config.DEFCON_3 ):
 			defcon = 3
-		elif( danger_value >= config.DEFCON_4 ):
+		elif( self.danger_level >= config.DEFCON_4 ):
 			defcon = 4
-		elif( danger_value >= config.DEFCON_5 ):
+		elif( self.danger_level >= config.DEFCON_5 ):
 			defcon = 5
-		elif( danger_value >= config.DEFCON_6 ):
+		elif( self.danger_level >= config.DEFCON_6 ):
 			defcon = 6
-		elif( danger_value >= config.DEFCON_7 ):
+		elif( self.danger_level >= config.DEFCON_7 ):
 			defcon = 7
-		elif( danger_value >= config.DEFCON_8 ):
+		elif( self.danger_level >= config.DEFCON_8 ):
 			defcon = 8
-		elif( danger_value >= config.DEFCON_9 ):
+		elif( self.danger_level >= config.DEFCON_9 ):
 			defcon = 9
-		elif( danger_value >= config.DEFCON_10 ):
+		elif( self.danger_level >= config.DEFCON_10 ):
 			defcon = 10
 
 		return defcon
 
-	def updateDefcon(self, danger_value):
+	def updateDefcon(self):
 		tmp_defcon = self.current_defcon
 
-		self.current_defcon = self.getDefconForDangerLevel(danger_level)
+		self.current_defcon = self.getDefconForDangerLevel()
 
 		# if we have a new defcon, record it and the time stamp in our history
 		if( tmp_defcon != self.current_defcon ):
@@ -177,6 +177,8 @@ class Profile:
 
 		self.status = Status()
 		self.updated = True
+
+		self.locked = False
 
 	# ===============================================================
 	# PREFERENCES GET/SET
@@ -264,6 +266,8 @@ class Profile:
 	def setCurrentDangerLevel(self, danger_level):
 		self.danger_level = danger_level
 
+	def updateDefconLevel(self):
+		self.status.updateDefcon()
 	def getCurrentDefconLevel(self):
 		return self.status.current_defcon
 	def setCurrentDefconLevel(self, new_defcon):
@@ -298,13 +302,20 @@ class Profile:
 		output_file.close()
 		return
 
+	def isLocked(self):
+		return self.locked
+	def unlock(self):
+		self.locked = False
+	def lock(self):
+		self.locked = True
+
 	# Adds new Coord and Data to the unexamined path queue
 	# NOTE: This should be the only function called by the Leylines
 	#	routine that adds new data from the app. After it's in the
 	#	unexamined path, the analyzer takes over, moving the data
 	#	toward the tree.
 	def addNewUnexaminedLocation( self, coord, data ):
-		self.unexamined_path.put( (coord,data) )
+		self.unexamined_path.append( (coord,data) )
 		self.updated = True
 		return
 
@@ -321,9 +332,16 @@ class Profile:
 	#	self.current_path.append( (loc[0], loc[1], state_of_path) )
 	#	return
 	def getCurrentPathNewestLocation(self):
-		return self.current_path.pop()
+		if(len(self.current_path) > 0):
+			return self.current_path.pop()
+		else:
+			return None
 	def getCurrentPathOldestLocation(self):
-		return self.current_path.popleft()
+		if(len(self.current_path) > 0):
+			return self.current_path.popleft()
+		else:
+			return None
+
 	def returnOldLocationToPath(self, loc):
 		self.current_path.appendleft(loc)
 		return

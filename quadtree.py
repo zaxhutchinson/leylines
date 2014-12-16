@@ -235,7 +235,7 @@ class QuadTree:
 		delta_long = (long2 - long1)
 
 		alpha = math.pow(math.sin(delta_lat / 2.0), 2.0) + \
-					math.cos(lat1) * math.cos(lat2) + \
+					math.cos(lat1) * math.cos(lat2) * \
 					math.pow(math.sin(delta_long / 2.0), 2.0)
 
 		beta = 2 * math.atan2( math.sqrt(alpha), math.sqrt(1 - alpha) )
@@ -293,7 +293,7 @@ class QuadTree:
 	def getRadiusOfQuad( self, quad ):
 		top_right = misc.GPSCoord( quad.top_left.latitude, quad.bottom_right.longitude )
 
-		return self.distanceBetweenTwoPoints( quad.top_left, top_right )
+		return (self.distanceBetweenTwoPoints( quad.top_left, top_right ) / 2.0)
 
 	def getRelativeQuadrantForCoord( self, coord, quad ):
 		return getRelativeQuadrantForCoord( coord, quad.top_left, quad.bottom_right )
@@ -331,7 +331,7 @@ class QuadTree:
 	def getDistanceToGoodQuad(self, coord):
 		closest_good_quad = self.getClosestGoodQuad(coord)
 		mid_point = self.getMidPoint(closest_good_quad.top_left,
-										closes_good_quad.bottom_right)
+										closest_good_quad.bottom_right)
 		return self.distanceBetweenTwoPoints( mid_point, coord )
 
 	def getClosestGoodQuad(self, coord ):
@@ -342,7 +342,6 @@ class QuadTree:
 		# Current closest quad
 		closest_quad = None
 		closest_quad_dist = None
-		closest_quad_radius = None
 
 		# Add the root's children to the open list.
 		if( self.root.ne != None ):
@@ -358,7 +357,7 @@ class QuadTree:
 
 			for q in open_list:
 
-				q_mid = self.getMidPoint(q)
+				q_mid = self.getMidPoint(q.top_left, q.bottom_right)
 				q_dist = self.distanceBetweenTwoPoints( q_mid, coord )
 
 				if( closest_quad_dist == None or q_dist < closest_quad_dist ):
@@ -367,8 +366,11 @@ class QuadTree:
 					closest_quad_dist = q_dist
 				
 			# If closest_quad's radius is <= QUAD_MIN, break, we have a leaf-level
-			# quad. 
-			if( self.getRadiusOfQuad( closest_quad ) <= QUAD_MIN ):
+			# quad.
+			#print("TOP_LEFT:     " + str(closest_quad.top_left.latitude) + " " + str(closest_quad.top_left.longitude))
+			#print("BOTTOM_RIGHT: " + str(closest_quad.bottom_right.latitude) + " " + str(closest_quad.bottom_right.longitude))
+			#print("RADIUS: " + str(self.getRadiusOfQuad( closest_quad) ))
+			if( int(self.getRadiusOfQuad( closest_quad )) <= config.QUAD_MIN ):
 				
 				break
 
@@ -385,6 +387,8 @@ class QuadTree:
 					open_list.append( closest_quad.nw )
 
 				open_list.remove( closest_quad )
+				closest_quad = None
+				closest_quad_dist = None
 
 
 		return closest_quad

@@ -29,7 +29,7 @@ def toDegrees( radians ):
 def toRadians( degrees ):
 	return degrees * config.PI / 180.0
 
-def distanceBetweenTwoPoints( self, GPSone, GPStwo ):
+def distanceBetweenTwoPoints( GPSone, GPStwo ):
 	lat1 = toRadians(GPSone.latitude)
 	lat2 = toRadians(GPStwo.latitude)
 	long1 = toRadians(GPSone.longitude)
@@ -39,7 +39,7 @@ def distanceBetweenTwoPoints( self, GPSone, GPStwo ):
 	delta_long = (long2 - long1)
 
 	alpha = math.pow(math.sin(delta_lat / 2.0), 2.0) + \
-				math.cos(lat1) * math.cos(lat2) + \
+				math.cos(lat1) * math.cos(lat2) * \
 				math.pow(math.sin(delta_long / 2.0), 2.0)
 
 	beta = 2 * math.atan2( math.sqrt(alpha), math.sqrt(1 - alpha) )
@@ -67,7 +67,7 @@ def examineNewLocation( profile ):
 	# Process a max of ten unexamined locations
 	while( ( len(profile.unexamined_path) > 0 ) and count < 10):
 
-		new_loc = profile.unexamined_path.get()
+		new_loc = profile.unexamined_path.popleft()
 		
 		# Get path state (either 0 or 1)
 		# If it's 0, then we're in a location we've been before
@@ -91,14 +91,31 @@ def examineNewLocation( profile ):
 			distance_to_known_location = profile.getDistanceToKnownLocation(new_loc[0])
 
 			# Calculate the relative distance deviation
-			raw_deviation_distance_known_location = float(distance_to_known_quad) / float(profile.getMaxDistanceToKnownQuad())
+			raw_deviation_relative_distance = float(distance_to_known_location) / float(profile.getMaxDistanceToKnownQuad())
 
 			# Get previous location added to current path
-			previous_location = profile.getMostRecentLocationInCurrentPath()
+			previous_location = profile.getCurrentPathNewestLocation()
 			
+			prev_coord = None
+
+			if(previous_location != None):
+				# Snag the prev_coord
+				prev_coord = previous_location[0]
+
+				# Return previous_location to current path
+				profile.appendToCurrentPathFromWhole(previous_location)
+			else:
+				# Get the last coord added to the quad tree.
+				prev_coord = profile.getLastCoordInQuadTree()
+
+			if(prev_coord == None):
+				raise
+
 			# Calculate and update total distance of this unknown path
-			present_dist = profile.getCurrentUnknownDistance() + distanceBetweenTwoPoints(new_loc[0], previous_location[0])
-			
+			present_dist = profile.getCurrentUnknownDistance() + distanceBetweenTwoPoints(new_loc[0], prev_coord)
+
+
+			# Update the new unknown distance
 			profile.setUnknownDistance(present_dist)
 
 			# Calculate deviation for total distance
@@ -118,7 +135,7 @@ def examineNewLocation( profile ):
 			# Total possible weight when raw_deviations total 1.0
 			total_weight = profile.getWeightDistanceToKnownQuad() + profile.getWeightDistanceOfUnknownPath() + profile.getWeightTimeOnUnknownPath()
 			
-			total_deviation = (deviation_relative_distance + deviation_total_distance + deviation_time) / total_weight
+			total_deviation = (deviation_relative_distance + deviation_total_distance + deviation_total_time) / total_weight
 
 		profile.appendToCurrentPathFromParts( new_loc[0], new_loc[1], total_deviation )
 
@@ -144,6 +161,7 @@ def examineCurrentPath( profile ):
 		# Get the last location we added to the current path
 		last_loc = profile.getCurrentPathNewestLocation()
 		if(last_loc != None):
+
 			temp_deque.append(last_loc)
 
 			# Get the time in secs of ( last_time - GPS Send Freq )
@@ -172,7 +190,6 @@ def examineCurrentPath( profile ):
 		# For everything newer than last time - GPS send freq
 		# Accumulate and add back to the current path in order
 		while( len(temp_deque) > 0 ):
-
 			loc = temp_deque.popleft()
 
 			number_inspected += 1
@@ -183,6 +200,10 @@ def examineCurrentPath( profile ):
 		# Use what we found to calculate newest danger level
 		if(number_inspected > 0):
 			profile.setCurrentDangerLevel( total_deviation / number_inspected )
+
+			profile.updateDefconLevel()
+
+		print(profile.getCurrentDefconLevel())
 
 # Remove older additions from the current path depending on the current defcon level.
 def purgeCurrentPathToTree( profile ):

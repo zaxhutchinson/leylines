@@ -24,6 +24,10 @@ class Leylines:
 		# sister dictionary above.
 		self.loaded_profiles_uid_queue = deque()
 
+		# Holds all the uids for all profiles, even those that are
+		# not presently loaded.		 
+		self.all_known_uids = []
+
 		# Holds all the pref_key files needing to be read.
 		self.dispatch_queue = Queue.Queue()
 
@@ -34,9 +38,11 @@ class Leylines:
 		self.log_file = open( (config.LOG_DIR + '/leylines_' + str(int(time.time())) + '.log'), 'w')
 		self.log("LEYLINES LOG FILE: " + str(time.time()))
 
-		self.isListening = True
-		self.isRunning = True
-		self.isDone = False
+		
+		self.stopListening = False
+		self.stopMessaging = False
+		self.stopDispatching = False
+		self.stopRunning = False
 
 		self.open_connections = deque()
 
@@ -53,7 +59,7 @@ class Leylines:
 
 	def __del__(self):
 		
-		self.isListening = False
+		self.storeUIDList()
 
 		for uid in self.loaded_profiles.keys():
 			self.storeProfile(uid)
@@ -62,7 +68,7 @@ class Leylines:
 
 		self.log_file.close()
 
-		self.isRunning = False
+		#self.isRunning = False
 
 	def loadProfile(self, uid):
 		profile = None
@@ -72,6 +78,9 @@ class Leylines:
 			print("ERROR: unpickling the uid: " + uid)
 			return False
 		else:
+			# In case a profile was stored mid-operation, or something
+			# previously went awry, load profile unlocked.
+			profile.unlock()
 			self.loaded_profiles_uid_queue.append(uid)
 			self.loaded_profiles[uid] = profile
 			return True
@@ -85,9 +94,38 @@ class Leylines:
 				print("ERROR: pickling the uid: " + uid)
 				return False
 			else:
-				self.loaded_profiles_uid_queue.remove(uid)
-				del self.loaded_profiles[uid]
+				#self.loaded_profiles_uid_queue.remove(uid)
+				#del self.loaded_profiles[uid]
 				return True
+
+	def getProfile(self, uid):
+		if( uid in self.loaded_profiles.keys() ):
+			print("PROFILE ALREADY LOADED")
+			return self.loaded_profiles[uid]
+		elif( (uid in self.all_known_uids) and (uid not in self.loaded_profiles.keys()) ):
+			if( (self.loadProfile()) == True ):
+				print("PROFILE NOT IN MEMORY, LOADING FIRST")
+				return self.loaded_profiles[uid]
+			else:
+				raise
+		else:
+			return None
+
+	def loadUIDList(self):
+		f = open('uid_list','r')
+
+		for uid in f:
+			self.all_known_uids.append(uid)
+
+		f.close()
+
+	def storeUIDList(self):
+		f = open('uid_list','w')
+
+		for uid in self.all_known_uids:
+			f.write(uid + '/n')
+
+		f.close()
 
 	def start(self):
 
@@ -117,24 +155,13 @@ class Leylines:
 	def stop(self):
 		print("LEYLINES: stopping")
 
-		print("LEYLINES: no longer listening")
-		self.isListening = False
-
-		print("LEYLINES: saving profiles")
-		for uid in self.loaded_profiles.keys():
-			self.storeProfile(uid)
-
-		print("LEYLINES: closing log file")
-		# Also should check queues for unprocessed messages
-		self.log_file.close()
-
-		print("LEYLINES: isRunning = false")
-		self.isRunning = False
+		self.stopListening = True
 
 	def run(self):
 		print("LEYLINES: running")
-		while(not self.isDone):
+		while( (not self.stopRunning) or (threading.activeCount() > 1) ):
 
+			#print("SIZE UID QUEUE: " + str(len(self.loaded_profiles_uid_queue)))
 			# Do nothing unless there are loaded profiles.
 			if( len(self.loaded_profiles_uid_queue) > 0 ):
 			
@@ -146,6 +173,8 @@ class Leylines:
 
 				# If this profile has been updated
 				if next_profile.updated:
+
+					print("LEYLINES: updating profile " + next_uid)
 
 					# Examine any new locations that have been added
 					analyzer.examineNewLocation( next_profile )
@@ -161,6 +190,8 @@ class Leylines:
 					# to the quad tree.
 					analyzer.purgeCurrentPathToTree( next_profile )
 
+					print("LEYLINES: profile " + next_uid + " updated")
+
 				# Add the uid to the end of the queue
 				self.loaded_profiles_uid_queue.append( next_uid )
 
@@ -168,26 +199,31 @@ class Leylines:
 				# No loaded profiles so sleep for a sec
 				time.sleep(1)
 
+		print("LEYLINES: saving uid list")
+		self.storeUIDList()
 
-		while( threading.activeCount() > 1 ):
-			# We wait for the other threads handling messages
-			# to finish. Sleep for a sec, check again.
-			# print("LEYLINES: " + str(threading.activeCount()) + " threads left")
-			time.sleep(1)
-
-		# Everything is stopped. No, new information coming in.
-		# Save all profiles.
+		print("LEYLINES: saving profiles")
 		for uid in self.loaded_profiles.keys():
 			self.storeProfile(uid)
 
+		self.loaded_profiles.clear()
+		self.loaded_profiles_uid_queue.clear()
+
+		print("LEYLINES: closing log file")
 		# Also should check queues for unprocessed messages
 		self.log_file.close()
-		
+
+
+
 		print("LEYLINES: offline")
+		print("")
+		print("######################")
+		print("# YOU'RE ON YOUR OWN #")
+		print("######################")
+
 
 	def listenManager(self):
-		print("LIS START")
-		while(self.isListening):
+		while(not self.stopListening):
 			conn = None
 			addr = None
 			try:
@@ -200,16 +236,14 @@ class Leylines:
 
 			if( conn != None and addr != None ):
 				print("LEYLINES: connection open to " + str(addr))
-				#conn_thread = threading.Thread(target=self.listener(conn,addr))
-				#conn_thread.start()
 				self.open_connections.append((conn,addr))
 
 		self.leysocket.close()
-		print("LIS END")
+		print("LEYLINES: stopped listening")
+		self.stopMessaging = True
 
 	def messageManager(self):
-		print("MES START")
-		while(self.isListening or ( len(self.open_connections) > 0 ) ):
+		while( (not self.stopMessaging) or ( len(self.open_connections) > 0 ) ):
 			if( len(self.open_connections) > 0 ):
 				conn,addr = self.open_connections.popleft()
 				print("LEYLINES: handling connection " + str(addr))
@@ -235,15 +269,19 @@ class Leylines:
 							self.dispatch_queue.task_done()
 							break
 			time.sleep(1)
-		print("MES END")
+
+		print("LEYLINES: stopped passing messages")
+		self.stopDispatching = True
 	
 	def dispatcher(self):
-		print("DIS START")
+		#print("DIS START")
 		
 		# The dispatcher should continue to run until it has been asked
 		# to terminate and the dispatch is not empty. It must continue
 		# until all messages are processed.
-		while(self.isRunning or (not self.dispatch_queue.empty()) ):
+		while( (not self.stopDispatching) or (not self.dispatch_queue.empty()) ):
+			if(self.stopDispatching):
+				print(self.dispatch_queue.empty())
 			msg = None
 			try:
 				msg = self.dispatch_queue.get(False)
@@ -285,7 +323,7 @@ class Leylines:
 					pos = threading.Thread(target = self.rec_pos(msg,conn,addr))
 					pos.start()
 				elif( typ == config.MSG_DIE ):
-					print("LEYLINES: stop msg received.")
+					print("LEYLINES: stop msg received")
 					if(msg.strip() == "IAmCompletelySurroundedByNoBeer"):	
 						conn.sendall("STOPPING LEYLINES\n")
 						self.stop()
@@ -299,28 +337,29 @@ class Leylines:
 
 		# The dispatcher has processed all messages and is ready to
 		# terminate
-		self.isDone = True
-
-		print("DIS END")
-			
+		print("LEYLINES: stopped dispatching")
+		self.stopRunning = True
 
 	# The following functions are called by dispatcher depending on
 	# the type of message received.
 
 	def rec_init(self, msg, conn, addr):
+		print("LEYLINES: processing init profile message")
 		items = msg.split('\n')
 		userid = items[0]
 		info = items[1:]
 
 		if( userid in self.loaded_profiles.keys() ):
 			conn.sendall("KO")
+			print("LEYLINES: finished init profile message (UID in use)")
 			return -1
 		else:
 			if( len(info) == 3 ):
 				coord = misc.GPSCoord( float(info[0]), float(info[1]) )
 				data = misc.Data( int(info[2]), 0.0 )
-				self.loaded_profiles_uid_queue.append(userid)
+				self.all_known_uids.append(userid)
 				self.loaded_profiles[userid] = profile.Profile( userid, coord, data )
+				self.loaded_profiles_uid_queue.append(userid)
 				conn.sendall("OK")
 			else:
 				conn.sendall("KO")
@@ -438,34 +477,37 @@ class Leylines:
 			conn.sendall("OK")				
 			
 	def rec_pos(self, msg, conn, addr):
-		msg_split = msg.split('/n')
-		userid = msg_split[0]
+		print("LEYLINES: processing position message")
+		msg_split = msg.split('\n')
+		userid = msg_split[0].strip()
 		items = msg_split[1:]
 
 		found_uid = False
+		profile = self.getProfile(userid)
 
-		for k,v in self.loaded_profiles.items():
-			if( k == userid ):
-				new_lat = 0.0
-				new_long = 0.0
-				new_time = 0.0
-				count = 0
-				for line in items:
-					if( count == 0 ):
-						new_lat = float( line )
-						count += 1
-					elif( count == 1):
-						new_long = float( line )
-						count += 1
-					elif( count == 2):
-						new_time = int( line )
-						count += 1
+		if( profile != None ):
+			new_lat = 0.0
+			new_long = 0.0
+			new_time = 0.0
+			count = 0
+			for line in items:
+				if( count == 0 ):
+					new_lat = float( line )
+					count += 1
+				elif( count == 1):
+					new_long = float( line )
+					count += 1
+				elif( count == 2):
+					new_time = int( line )
+					count += 1
 
-					if( count == 3 ):
-						coord = misc.GPSCoord( new_lat, new_long )
-						data = misc.Data( new_time, 0.0 )
+				if( count == 3 ):
+					coord = misc.GPSCoord( new_lat, new_long )
+					data = misc.Data( new_time, 0.0 )
 
-						v.addNewUnexaminedLocation( coord, data )
+					profile.addNewUnexaminedLocation( coord, data )
+		print("LEYLINES: finished position message")
+
 
 	def log(self, text):
 		self.log_file.write(text)
