@@ -161,6 +161,8 @@ class Leylines:
 		print("LEYLINES: running")
 		while( (not self.stopRunning) or (threading.activeCount() > 1) ):
 
+			time.sleep(1)
+
 			#print("SIZE UID QUEUE: " + str(len(self.loaded_profiles_uid_queue)))
 			# Do nothing unless there are loaded profiles.
 			if( len(self.loaded_profiles_uid_queue) > 0 ):

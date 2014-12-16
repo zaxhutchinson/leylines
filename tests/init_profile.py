@@ -26,8 +26,8 @@ PORT = 65006
 PORT_LOCAL = 65006
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#s.connect((HOST,PORT))
-s.connect((HOST_LOCAL,PORT_LOCAL))
+s.connect((HOST,PORT))
+#s.connect((HOST_LOCAL,PORT_LOCAL))
 s.sendall(init_msg)
 #s.sendall(pos_msg)
 #s.sendall (stop_msg)
