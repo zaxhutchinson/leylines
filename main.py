@@ -388,12 +388,16 @@ class Leylines:
 			return
 		else:
 			if( len(info) == 3 ):
+				print("LEYLINES: init messsage good")
 				coord = misc.GPSCoord( float(info[0]), float(info[1]) )
 				data = misc.Data( 0, int(info[2]), 0.0 )
 				self.all_known_uids.append(userid)
 				self.loaded_profiles[userid] = ley_profile.Profile( userid, coord, data )
 				self.loaded_profiles_uid_queue.append(userid)
+				print("LEYLINES: sending init response")
 				conn.sendall("OK")
+				print("LEYLINES: init message sent")
+
 			else:
 				conn.sendall("KO")
 				return # ERROR, bad initial data
@@ -405,12 +409,14 @@ class Leylines:
 		msg = msg.strip('\n')
 		for k,v in self.loaded_profiles.items():
 			if (k == msg):
-				v.profile.flipisTracking()
+				v.flipisTracking()
+				v.setTimeStampOfLastMessage()
 				conn.sendall("OK")
-			else:
-				self.log("Error: User ID not found")
-				conn.sendall("KO")
-				
+				return
+		conn.sendall("KO")
+		return
+
+
 		# Will have to return an OK here eventually.
 		
 	# Should return the status of the user who queried it.

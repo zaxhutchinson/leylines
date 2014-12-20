@@ -123,6 +123,8 @@ class Status:
 		#Used to determine how long the tracker was disabled.
 		self.time_Disabled = 0.0
 
+		self.timestamp_last_message = time.time()
+
 		self.alert_has_been_sent = False
 
 	def getDefconForDangerLevel(self):
@@ -296,6 +298,11 @@ class Profile:
 		return self.status.time_Disabled
 	def setTimeDisabled(self, Td):
 		self.status.time_Disabled = Td
+
+	def getTimeStampOfLastMessage(self):
+		return self.status.timestamp_last_message
+	def setTimeStampOfLastMessage(self):
+		self.status.timestamp_last_message = time.time()
 
 	def getNextDataID(self):
 		while(self.isLocked()):
