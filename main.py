@@ -298,7 +298,6 @@ class Leylines:
 							break
 				if(len(msg) > 0):		
 					print('LEYLINES: msg received')
-					conn.sendall('OK')
 					self.dispatch_queue.put( (conn,addr,msg),False )
 					self.dispatch_queue.task_done()
 			time.sleep(1)
