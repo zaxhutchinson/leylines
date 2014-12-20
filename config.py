@@ -22,6 +22,9 @@ DANGER_LEVEL_TIME_BLOCK = 2.0
 
 LOG_DIR = 'logs'
 
+OK_MSG = "OK\n"
+KO_MSG = "KO\n"
+
 ########################################
 ### DO NOT CHANGE VALUES ONCE IN USE ###
 HOST = ''

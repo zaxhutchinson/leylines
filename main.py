@@ -294,7 +294,7 @@ class Leylines:
 					else:
 						if len(msg) == 0:
 							print("LEYLINES: breaking 1")
-							conn.sendall("KO")
+							conn.sendall(config.KO_MSG)
 							break
 				if(len(msg) > 0):		
 					print('LEYLINES: msg received')
@@ -383,7 +383,7 @@ class Leylines:
 		info = items[1:]
 
 		if( userid in self.loaded_profiles.keys() ):
-			conn.sendall("KO")
+			conn.sendall(config.KO_MSG)
 			print("LEYLINES: finished init profile message (UID in use)")
 			return
 		else:
@@ -395,11 +395,11 @@ class Leylines:
 				self.loaded_profiles[userid] = ley_profile.Profile( userid, coord, data )
 				self.loaded_profiles_uid_queue.append(userid)
 				print("LEYLINES: sending init response")
-				conn.sendall("OK")
+				conn.sendall(config.OK_MSG)
 				print("LEYLINES: init message sent")
 
 			else:
-				conn.sendall("KO")
+				conn.sendall(config.KO_MSG)
 				return # ERROR, bad initial data
 
 					
@@ -409,11 +409,11 @@ class Leylines:
 		msg = msg.strip('\n')
 		for k,v in self.loaded_profiles.items():
 			if (k == msg):
-				v.flipisTracking()
+				v.flipIsTracking()
 				v.setTimeStampOfLastMessage()
-				conn.sendall("OK")
+				conn.sendall(config.OK_MSG)
 				return
-		conn.sendall("KO")
+		conn.sendall(config.KO_MSG)
 		return
 
 
@@ -425,7 +425,8 @@ class Leylines:
 		for k,v in self.loaded_profiles.items():
 			if (k == msg[0]):
 				stats = v.getCurrentDefconLevel()
-				conn.sendall("OK")
+				v.setTimeStampOfLastMessage()
+				conn.sendall(config.OK_MSG)
 				#conn.sendall("Current defcon level is: " + str(str_stats))
 				
 	
@@ -433,7 +434,7 @@ class Leylines:
 	#Should receive latitude, longitude, day of the week, time of arrival and depature
 	#and save them into some sort of class or whatever.
 	def rec_loc(self, msg, conn, addr):
-		conn.sendall("OK")
+		conn.sendall(config.OK_MSG)
 
 	def rec_pref(self, msg, conn, addr):
 		msg_split = msg.split('/n')
@@ -442,7 +443,7 @@ class Leylines:
 
 		found_uid = False
 
-		for uid,profile in self.loaded_profiles.items():
+		for k,v in self.loaded_profiles.items():
 			if(uid == userid):
 
 				found_uid = True
@@ -511,9 +512,9 @@ class Leylines:
 					break;
 
 		if not found_uid:
-			conn.sendall("KO")
+			conn.sendall(config.KO_MSG)
 		else:
-			conn.sendall("OK")				
+			conn.sendall(config.OK_MSG)				
 			
 	def rec_pos(self, msg, conn, addr):
 		print("LEYLINES: processing position message")
