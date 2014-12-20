@@ -73,13 +73,13 @@ class Preferences:
 		# MAX DISTANCE TO KNOWN QUAD
 		self.pref_key_distance_settings=False
 		self.pref_key_distance_importance=10
-		self.pref_key_distance_deviation_setting=100
+		self.pref_key_distance_deviation_setting=1000
 		self.pref_key_distance_deviation_alert=""
 
 		# MAX TOTAL DISTANCE OF UNKNOWN PATH
 		self.pref_key_distance_total_settings=False
 		self.pref_key_distance_total_importance=10
-		self.pref_key_distance_deviation_total_setting=100
+		self.pref_key_distance_deviation_total_setting=1000
 		self.pref_key_distance_deviation_total_alert=""
 		
 		self.pref_key_location_settings=False
@@ -89,7 +89,7 @@ class Preferences:
 		self.pref_key_location_settings_alert=""
 
 		self.pref_key_time_settings=False
-		self.pref_key_time_importance=0.5
+		self.pref_key_time_importance=10
 		self.pref_key_time_deviation_setting=10800
 		self.pref_key_time_deviation_alert=""
 		
@@ -270,7 +270,7 @@ class Profile:
 	def getCurrentDangerLevel(self):
 		return self.status.danger_level
 	def setCurrentDangerLevel(self, danger_level):
-		self.danger_level = danger_level
+		self.status.danger_level = danger_level
 
 	def updateDefconLevel(self):
 		self.status.updateDefcon()

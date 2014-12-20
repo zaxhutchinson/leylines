@@ -104,13 +104,13 @@ def examineNewLocation( profile, log ):
 
 			if(previous_location != None):
 				# Snag the prev_coord
-				log.write("TAKEN FROM CUR PATH\n")
+				#log.write("TAKEN FROM CUR PATH\n")
 				prev_coord = previous_location[0]
 
 				# Return previous_location to current path
 				profile.appendToCurrentPathFromWhole(previous_location)
 			else:
-				log.write("TAKEN FROM QT\n")
+				#log.write("TAKEN FROM QT\n")
 				# Get the last coord added to the quad tree.
 				prev_coord = profile.getLastCoordInQuadTree()
 
@@ -119,6 +119,8 @@ def examineNewLocation( profile, log ):
 
 			# Calculate and update total distance of this unknown path
 			present_dist = profile.getCurrentUnknownDistance() + distanceBetweenTwoPoints(new_loc[0], prev_coord)
+			log.write("PREV_COORD: " + str(prev_coord.latitude) + " " + str(prev_coord.longitude))
+			log.write("NEW_LOC: " + str(new_loc[0].latitude) + " " + str(new_loc[0].longitude))
 
 			log.write("TOTAL DISTANCE ON UNKNOWN PATH ( " + str(profile.getCurrentUnknownDistance()) + " + " + str(distanceBetweenTwoPoints(new_loc[0], prev_coord)) + " = " + str(present_dist) + "\n")
 
@@ -151,6 +153,7 @@ def examineNewLocation( profile, log ):
 			total_deviation = (deviation_relative_distance + deviation_total_distance + deviation_total_time) / total_weight
 
 			log.write("TOTAL DEVIATION: " + str(total_deviation) + "\n")
+			log.write("CURRENT DEFCON LEVEL: " + str(profile.getCurrentDefconLevel()) + "\n")
 
 			new_loc[1].deviation = total_deviation
 
@@ -165,19 +168,24 @@ def examineNewLocation( profile, log ):
 	if( len(profile.unexamined_path) == 0 ):
 		profile.updated = False
 
-# 			
+ 			
 def examineCurrentPath( profile, log ):
 
 	length = len(profile.current_path)
+	print("LEN CURRENT PATH: " + str(length))
 
 	if(length > 0):
 
 		# Where we'll store location's when we pull them off the path
 		temp_deque = deque()
 
+		count = 0
+
 		# Get the last location we added to the current path
 		last_loc = profile.getCurrentPathNewestLocation()
 		if(last_loc != None):
+
+			count += 1
 
 			temp_deque.append(last_loc)
 
@@ -193,7 +201,8 @@ def examineCurrentPath( profile, log ):
 				if(last_loc == None):
 					break
 				# If it falls within the GPS send time...
-				if(last_loc[1].time < max_time):
+				if(last_loc[1].time > max_time):
+					count += 1
 
 					# Add it to the temp queue
 					temp_deque.append(last_loc)
@@ -201,6 +210,8 @@ def examineCurrentPath( profile, log ):
 				else:
 					profile.appendToCurrentPathFromWhole(last_loc)
 					break
+
+		print("TEMP_DEQUE = " + str(count))
 		
 		# Non-local storage for the loop
 		number_inspected = 0
@@ -217,12 +228,18 @@ def examineCurrentPath( profile, log ):
 			profile.appendToCurrentPathFromWhole(loc)
 
 		# Use what we found to calculate newest danger level
+
+		print("DEVIATION: " + str(total_deviation) + "|" + str(number_inspected))
+
 		if(number_inspected > 0):
 			profile.setCurrentDangerLevel( float(total_deviation) / float(number_inspected) )
 
+			print("DANGER_LEVEL: " + str(profile.getCurrentDangerLevel()))
+
 			profile.updateDefconLevel()
 
-	log.write("CURRENT PATH LEN: " + str(length) + "\n")
+			#log.write("CURRENT DEFCON LEVEL: " + str(profile.getCurrentDefconLevel()))
+
 
 # Remove older additions from the current path depending on the current defcon level.
 def purgeCurrentPathToTree( profile ):
