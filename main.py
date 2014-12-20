@@ -1,5 +1,5 @@
 import quadtree
-import profile
+import ley_profile
 import analyzer
 import pickle
 import time
@@ -28,6 +28,9 @@ class Leylines:
 		# not presently loaded.		 
 		self.all_known_uids = []
 
+		self.loadUIDList()
+		self.loadAllProfiles()
+
 		# Holds all the pref_key files needing to be read.
 		self.dispatch_queue = Queue.Queue()
 
@@ -36,7 +39,7 @@ class Leylines:
 
 		# Open a log file for errors, etc.
 		self.log_file = open( (config.LOG_DIR + '/leylines_' + str(int(time.time())) + '.log'), 'w')
-		self.log("LEYLINES LOG FILE: " + str(time.time()))
+		self.log("LEYLINES LOG FILE: " + str(time.time()) + "\n")
 
 		
 		self.stopListening = False
@@ -70,17 +73,42 @@ class Leylines:
 
 		#self.isRunning = False
 
+	def loadAllProfiles(self):
+		for uid in self.all_known_uids:
+
+			self.loadProfile(uid)
+
 	def loadProfile(self, uid):
 		profile = None
 		try:
-			profile = quadtree.Profile.load(uid)
-		except (pickle.UnpicklingError, AttributeError, EOFError, ImportError, IndexError):
+			profile = ley_profile.Profile.load(uid)
+		except (pickle.UnpicklingError):
+			print("Unpickling: 1")
+			return False
+		except AttributeError as e:
+			print("Unpickling: 2: " + str(e))
+			return False
+		except (EOFError):
+			print("Unpickling: 3")
+			return False
+		except (ImportError):
+			print("Unpickling: 4")
+			return False
+		except (IndexError):
 			print("ERROR: unpickling the uid: " + uid)
 			return False
 		else:
 			# In case a profile was stored mid-operation, or something
 			# previously went awry, load profile unlocked.
 			profile.unlock()
+
+			print(profile.tree_as_list[0])
+			# Initialize a new tree with the original first coordinate
+			profile.tree = quadtree.QuadTree( profile.tree_as_list[0][0], profile.tree_as_list[0][1] )
+
+			# with all other Coords, rebuild tree
+			profile.rebuildTree(profile.tree_as_list)
+
 			self.loaded_profiles_uid_queue.append(uid)
 			self.loaded_profiles[uid] = profile
 			return True
@@ -112,18 +140,20 @@ class Leylines:
 			return None
 
 	def loadUIDList(self):
-		f = open('uid_list','r')
+		if(os.path.isfile('uid_list')):
+			f = open('uid_list','r')
 
-		for uid in f:
-			self.all_known_uids.append(uid)
+			for uid in f:
+				self.all_known_uids.append(uid.strip())
+				print(uid.strip())
 
-		f.close()
+			f.close()
 
 	def storeUIDList(self):
 		f = open('uid_list','w')
 
 		for uid in self.all_known_uids:
-			f.write(uid + '/n')
+			f.write(uid + '\n')
 
 		f.close()
 
@@ -179,10 +209,10 @@ class Leylines:
 					print("LEYLINES: updating profile " + next_uid)
 
 					# Examine any new locations that have been added
-					analyzer.examineNewLocation( next_profile )
+					analyzer.examineNewLocation( next_profile, self.log_file )
 
 					# Examine the current path
-					analyzer.examineCurrentPath( next_profile )
+					analyzer.examineCurrentPath( next_profile, self.log_file )
 
 					# Check friend levels
 					for friend in next_profile.getFriendList():
@@ -253,9 +283,11 @@ class Leylines:
 				while(True):
 					print("LEYLINES: passing message")
 					try:
-						data = conn.recv(1024)
+						data = conn.recv(1024, socket.MSG_DONTWAIT)
 						if data:
 							msg += data
+						else:
+							break
 					except(socket.timeout, socket.error):
 						print("LEYLINES: breaking 0")
 						break
@@ -264,12 +296,11 @@ class Leylines:
 							print("LEYLINES: breaking 1")
 							conn.sendall("KO")
 							break
-						else:
-							print('LEYLINES: msg received')
-							conn.sendall('OK')
-							self.dispatch_queue.put( (conn,addr,msg),False )
-							self.dispatch_queue.task_done()
-							break
+				if(len(msg) > 0):		
+					print('LEYLINES: msg received')
+					conn.sendall('OK')
+					self.dispatch_queue.put( (conn,addr,msg),False )
+					self.dispatch_queue.task_done()
 			time.sleep(1)
 
 		print("LEYLINES: stopped passing messages")
@@ -358,9 +389,9 @@ class Leylines:
 		else:
 			if( len(info) == 3 ):
 				coord = misc.GPSCoord( float(info[0]), float(info[1]) )
-				data = misc.Data( int(info[2]), 0.0 )
+				data = misc.Data( 0, int(info[2]), 0.0 )
 				self.all_known_uids.append(userid)
-				self.loaded_profiles[userid] = profile.Profile( userid, coord, data )
+				self.loaded_profiles[userid] = ley_profile.Profile( userid, coord, data )
 				self.loaded_profiles_uid_queue.append(userid)
 				conn.sendall("OK")
 			else:
@@ -505,7 +536,7 @@ class Leylines:
 
 				if( count == 3 ):
 					coord = misc.GPSCoord( new_lat, new_long )
-					data = misc.Data( new_time, 0.0 )
+					data = misc.Data( profile.getNextDataID(), new_time, 0.0 )
 
 					profile.addNewUnexaminedLocation( coord, data )
 		print("LEYLINES: finished position message")

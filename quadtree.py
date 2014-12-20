@@ -49,6 +49,81 @@ class QuadTree:
 
 		return
 
+	def rebuildQuadTree(self, tree_as_dic):
+
+		for i in range(1, len(tree_as_dic)):
+
+			mid_point = tree_as_dic[i][0]
+
+			data = tree_as_dic[i][1]
+
+			if(data.prev_entry is not None):
+				data.prev_entry = tree_as_dic[data.prev_entry][1]
+			else:
+				data.prev_entry = None
+			if(data.next_entry is not None):
+				data.next_entry = tree_as_dic[data.next_entry][1]
+			else:
+				data.next_entry = None
+
+			self.addNewData(mid_point, data)
+		
+
+	def flattenTree(self):
+		extracted_data = []
+
+		sub_list = self.flattenQuadTree(self.root, self.current_radius)
+
+		if( len(sub_list) > 0 ):
+			extracted_data.extend(sub_list)
+
+		data_dic = {}
+
+		for data in extracted_data:
+
+			if(data[1].prev_entry is not None):
+				data[1].prev_entry = data[1].prev_entry.dataID
+			else:
+				data[1].prev_entry = None
+			if(data[1].next_entry is not None):
+				data[1].next_entry = data[1].next_entry.dataID
+			else:
+				data[1].next_entry = None
+
+			data_dic[data[1].dataID] = data
+
+		return data_dic
+
+
+	def flattenQuadTree(self, quad, radius):
+
+		extracted_data = []
+
+		if( radius <= config.QUAD_MIN ):
+			mid_point = self.getMidPoint(quad.top_left, quad.bottom_right)
+			for d in quad.data:
+				extracted_data.append( (mid_point, d) )
+
+		else:
+			if( quad.ne != None ):
+				sub_list = self.flattenQuadTree(quad.ne, (radius / 2))
+				if( len(sub_list) > 0 ):
+					extracted_data.extend(sub_list)
+			if( quad.se != None ):
+				sub_list = self.flattenQuadTree(quad.se, (radius / 2))
+				if( len(sub_list) > 0 ):
+					extracted_data.extend(sub_list)
+			if( quad.sw != None ):
+				sub_list = self.flattenQuadTree(quad.sw, (radius / 2))
+				if( len(sub_list) > 0 ):
+					extracted_data.extend(sub_list)
+			if( quad.nw != None ):
+				sub_list = self.flattenQuadTree(quad.nw, (radius / 2))
+				if( len(sub_list) > 0 ):
+					extracted_data.extend(sub_list)
+
+		return extracted_data
+
 	def addData(self, quad, data):
 		quad.data.append(data)
 		if( len(quad.data) >= config.MIN_VISITS_TO_CREATE_MEGALITH ):
@@ -96,7 +171,7 @@ class QuadTree:
 		# SE
 		elif( which_quad == 2 ):
 			if( quad.se == None ):
-				quad.se = misc.Quad( quad, mid_point, quad.bottom_right )
+				quad.se = Quad( quad, mid_point, quad.bottom_right )
 			return self.addCoord( coord, quad.se, (radius / 2), data )
 		# SW
 		elif( which_quad == 3 ):
@@ -108,7 +183,7 @@ class QuadTree:
 		# NW
 		elif( which_quad == 4 ):
 			if( quad.nw == None ):
-				quad.nw = misc.Quad( quad, quad.top_left, mid_point )
+				quad.nw = Quad( quad, quad.top_left, mid_point )
 			return self.addCoord( coord, quad.nw, (radius / 2), data )
 
 	def isKnownCoord(self, coord):

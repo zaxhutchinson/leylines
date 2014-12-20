@@ -57,7 +57,7 @@ def calculateTotalDistanceDeviation( max_dist, dist ):
 # Examines the unexamined_path of the profile and adds it to the
 # current_path. It's main job is to calculate the deviation number
 # of each individual logged location with respect to distance and time.
-def examineNewLocation( profile ):
+def examineNewLocation( profile, log ):
 
 	# Since this is a while something loop, we need to have a max number of
 	# iterations or else there is a theoretical risk, it never terminates
@@ -65,7 +65,9 @@ def examineNewLocation( profile ):
 	count = 0
 
 	# Process a max of ten unexamined locations
-	while( ( len(profile.unexamined_path) > 0 ) and count < 10):
+	while( ( len(profile.unexamined_path) > 0 ) and count < 100):
+
+		log.write("#######################################\n")
 
 		new_loc = profile.unexamined_path.popleft()
 		
@@ -90,6 +92,8 @@ def examineNewLocation( profile ):
 			# How far is this coordinate from a known location?
 			distance_to_known_location = profile.getDistanceToKnownLocation(new_loc[0])
 
+			log.write("DIST TO KNOWN LOCATION: " + str(distance_to_known_location) + "\n")
+
 			# Calculate the relative distance deviation
 			raw_deviation_relative_distance = float(distance_to_known_location) / float(profile.getMaxDistanceToKnownQuad())
 
@@ -100,11 +104,13 @@ def examineNewLocation( profile ):
 
 			if(previous_location != None):
 				# Snag the prev_coord
+				log.write("TAKEN FROM CUR PATH\n")
 				prev_coord = previous_location[0]
 
 				# Return previous_location to current path
 				profile.appendToCurrentPathFromWhole(previous_location)
 			else:
+				log.write("TAKEN FROM QT\n")
 				# Get the last coord added to the quad tree.
 				prev_coord = profile.getLastCoordInQuadTree()
 
@@ -114,6 +120,7 @@ def examineNewLocation( profile ):
 			# Calculate and update total distance of this unknown path
 			present_dist = profile.getCurrentUnknownDistance() + distanceBetweenTwoPoints(new_loc[0], prev_coord)
 
+			log.write("TOTAL DISTANCE ON UNKNOWN PATH ( " + str(profile.getCurrentUnknownDistance()) + " + " + str(distanceBetweenTwoPoints(new_loc[0], prev_coord)) + " = " + str(present_dist) + "\n")
 
 			# Update the new unknown distance
 			profile.setUnknownDistance(present_dist)
@@ -124,6 +131,8 @@ def examineNewLocation( profile ):
 			# Get time on unknown path. In seconds...probably.
 			time_on_unknown_path = new_loc[1].time - profile.getCurrentUnknownPathTimeStamp()
 
+			log.write("TOTAL TIME ON UNKNOWN PATH: " + str(time_on_unknown_path) + "\n")
+
 			# Calc the time deviation
 			raw_deviation_time = float(time_on_unknown_path) / float(profile.getMaxTimeOnUnknownPath())
 
@@ -132,12 +141,20 @@ def examineNewLocation( profile ):
 			deviation_total_distance = raw_deviation_total_distance * profile.getWeightDistanceOfUnknownPath()
 			deviation_total_time = raw_deviation_time *	profile.getWeightTimeOnUnknownPath()
 
+			log.write("REL DIST DEV: " + str(deviation_relative_distance) + "\n")
+			log.write("TOTAL DIST DEV: " + str(deviation_total_distance) + "\n")
+			log.write("TOTAL TIME DEV: " + str(deviation_total_time) + "\n")
+
 			# Total possible weight when raw_deviations total 1.0
 			total_weight = profile.getWeightDistanceToKnownQuad() + profile.getWeightDistanceOfUnknownPath() + profile.getWeightTimeOnUnknownPath()
 			
 			total_deviation = (deviation_relative_distance + deviation_total_distance + deviation_total_time) / total_weight
 
-		profile.appendToCurrentPathFromParts( new_loc[0], new_loc[1], total_deviation )
+			log.write("TOTAL DEVIATION: " + str(total_deviation) + "\n")
+
+			new_loc[1].deviation = total_deviation
+
+		profile.appendToCurrentPathFromWhole( new_loc )
 
 		# Unlock Queue
 		# profile.unexamined_path.task_done()
@@ -149,7 +166,7 @@ def examineNewLocation( profile ):
 		profile.updated = False
 
 # 			
-def examineCurrentPath( profile ):
+def examineCurrentPath( profile, log ):
 
 	length = len(profile.current_path)
 
@@ -173,6 +190,8 @@ def examineCurrentPath( profile ):
 			while( True ):
 				#Get next oldest location
 				last_loc = profile.getCurrentPathNewestLocation()
+				if(last_loc == None):
+					break
 				# If it falls within the GPS send time...
 				if(last_loc[1].time < max_time):
 
@@ -199,18 +218,18 @@ def examineCurrentPath( profile ):
 
 		# Use what we found to calculate newest danger level
 		if(number_inspected > 0):
-			profile.setCurrentDangerLevel( total_deviation / number_inspected )
+			profile.setCurrentDangerLevel( float(total_deviation) / float(number_inspected) )
 
 			profile.updateDefconLevel()
 
-		print(profile.getCurrentDefconLevel())
+	log.write("CURRENT PATH LEN: " + str(length) + "\n")
 
 # Remove older additions from the current path depending on the current defcon level.
 def purgeCurrentPathToTree( profile ):
 
 	# If the current defcon level is above the defcon threshold, do not
 	# send any data to the quad tree.
-	if(profile.getCurrentDefconLevel() <= profile.getAverageDefconThreshold()):
+	if(profile.getCurrentDefconLevel() >= profile.getAverageDefconThreshold()):
 		return	
 
 	# If the defcon level is five, we don't need to worry too much
@@ -225,15 +244,18 @@ def purgeCurrentPathToTree( profile ):
 			# The newest date we want to purge is the present time minus
 			# the GPS Send Frequency. If purge_to_date is more recent than that
 			# just the max.
-			max_purge_to_date = (int(time.time()) - profile.getGPSSendFrenquency() )
+			max_purge_to_date = (int(time.time()) - profile.getGPSSendFrequency() )
 			if(purge_to_date > max_purge_to_date ):
 				purge_to_date = max_purge_to_date
 
 			# Purge everything up to the purge date and dump it into the quadtree.
-			while( oldest_loc[1].time < purge_to_date ):
+			while( (oldest_loc[1].time < purge_to_date) ):
 				profile.dumpLocation(oldest_loc)
 
-				oldest_loc = profile.getCurrentPathOldestLocation()	
+				oldest_loc = profile.getCurrentPathOldestLocation()
+
+				if(oldest_loc == None):
+					break
 
 	# Above 1 but below threshold:
 	# Only purge data more than 24 hours old.

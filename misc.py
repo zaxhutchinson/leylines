@@ -1,5 +1,6 @@
 class Data:
-	def __init__(self, time, deviation):
+	def __init__(self, dataID, time, deviation):
+		self.dataID = dataID
 		self.time = time
 		self.deviation = deviation
 		self.location = None

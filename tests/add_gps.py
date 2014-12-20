@@ -19,6 +19,10 @@ for line in f:
 	time += take_five
 f.close()
 
+#g = open('gps_add_path.path', 'w')
+#g.write(pos_msg)
+#g.close()
+
 ADDRESS = 'leylines.duckdns.org:65006'
 HOST = 'leylines.duckdns.org'
 HOST_LOCAL = 'localhost'
@@ -26,8 +30,8 @@ PORT = 65006
 PORT_LOCAL = 65006
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST,PORT))
-#s.connect((HOST_LOCAL,PORT_LOCAL))
+#s.connect((HOST,PORT))
+s.connect((HOST_LOCAL,PORT_LOCAL))
 #s.sendall(init_msg)
 s.sendall(pos_msg)
 #s.sendall (stop_msg)

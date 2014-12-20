@@ -168,6 +168,12 @@ class Profile:
 		self.uid = uid
 		self.first_name = first_name
 		self.last_name = last_name
+
+		# Hackery, but set to 1. The 0th dataID will be taken by the first
+		# data entry done on profile creation
+		self.dataID = 1
+
+		self.tree_as_list = {}
 		self.tree = quadtree.QuadTree(coord, data)
 
 		self.preferences = Preferences()
@@ -291,15 +297,39 @@ class Profile:
 	def setTimeDisabled(self, Td):
 		self.status.time_Disabled = Td
 
+	def getNextDataID(self):
+		while(self.isLocked()):
+			None
+		self.lock()
+		next_data_id = self.dataID
+		self.dataID += 1
+		self.unlock()
+		return next_data_id
+
+	def __getstate__(self):
+		state = self.__dict__.copy()
+		del state['tree']
+		return state
+	def __setstate__(self, d):
+		#d['tree'] = None
+		print("ASS")
+		self.__dict__.update(d)
+
 	@classmethod
 	def load(cls, filename):
 		input_file = open(filename, 'rb')
 		return pickle.load(input_file)
 
+	def rebuildTree(self, tree_as_dict):
+		self.tree.rebuildQuadTree(tree_as_dict)
+
 	def save(self):
 		output_file = open(self.uid, 'wb')
+		self.tree_as_list = self.tree.flattenTree()
+		print("TREE LIST SIZE: " + str(len(self.tree_as_list)) + "\n")
 		pickle.dump(self, output_file)
 		output_file.close()
+		self.tree_as_list.clear()
 		return
 
 	def isLocked(self):
@@ -348,8 +378,8 @@ class Profile:
 	def appendToCurrentPathFromWhole(self, loc):
 		self.current_path.append(loc)
 		return
-	def appendToCurrentPathFromParts(self, coord, data, deviation):
-		self.current_path.append( (coord, data, deviation) )
+	def appendToCurrentPathFromParts(self, coord, data):
+		self.current_path.append( (coord, data) )
 		return
 
 	# Add all current path to the tree, leaving out the state info
