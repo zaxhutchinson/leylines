@@ -311,8 +311,6 @@ class Profile:
 		del state['tree']
 		return state
 	def __setstate__(self, d):
-		#d['tree'] = None
-		print("ASS")
 		self.__dict__.update(d)
 
 	@classmethod
@@ -326,7 +324,7 @@ class Profile:
 	def save(self):
 		output_file = open(self.uid, 'wb')
 		self.tree_as_list = self.tree.flattenTree()
-		print("TREE LIST SIZE: " + str(len(self.tree_as_list)) + "\n")
+		#print("TREE LIST SIZE: " + str(len(self.tree_as_list)) + "\n")
 		pickle.dump(self, output_file)
 		output_file.close()
 		self.tree_as_list.clear()

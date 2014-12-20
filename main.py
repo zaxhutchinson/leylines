@@ -83,19 +83,19 @@ class Leylines:
 		try:
 			profile = ley_profile.Profile.load(uid)
 		except (pickle.UnpicklingError):
-			print("Unpickling: 1")
+			print("Unpickling error: " + str(e))
 			return False
 		except AttributeError as e:
-			print("Unpickling: 2: " + str(e))
+			print("AttributeError while unpickling: " + str(e))
 			return False
 		except (EOFError):
-			print("Unpickling: 3")
+			print("EOFError while unpickling: " + str(e))
 			return False
 		except (ImportError):
-			print("Unpickling: 4")
+			print("ImportError while unpickling: " + str(e))
 			return False
 		except (IndexError):
-			print("ERROR: unpickling the uid: " + uid)
+			print("IndexError while unpickling: " + str(e))
 			return False
 		else:
 			# In case a profile was stored mid-operation, or something
@@ -206,7 +206,7 @@ class Leylines:
 				# If this profile has been updated
 				if next_profile.updated:
 
-					print("LEYLINES: updating profile " + next_uid)
+					#print("LEYLINES: updating profile " + next_uid)
 
 					# Examine any new locations that have been added
 					analyzer.examineNewLocation( next_profile, self.log_file )
@@ -222,7 +222,7 @@ class Leylines:
 					# to the quad tree.
 					analyzer.purgeCurrentPathToTree( next_profile )
 
-					print("LEYLINES: profile " + next_uid + " updated")
+					#print("LEYLINES: profile " + next_uid + " updated")
 
 				# Add the uid to the end of the queue
 				self.loaded_profiles_uid_queue.append( next_uid )
@@ -385,7 +385,7 @@ class Leylines:
 		if( userid in self.loaded_profiles.keys() ):
 			conn.sendall("KO")
 			print("LEYLINES: finished init profile message (UID in use)")
-			return -1
+			return
 		else:
 			if( len(info) == 3 ):
 				coord = misc.GPSCoord( float(info[0]), float(info[1]) )
@@ -396,7 +396,7 @@ class Leylines:
 				conn.sendall("OK")
 			else:
 				conn.sendall("KO")
-				return -2 # ERROR, bad initial data
+				return # ERROR, bad initial data
 
 					
 	# Searches for a corresponding UID and flips the tracking variable
@@ -535,8 +535,10 @@ class Leylines:
 					count += 1
 
 				if( count == 3 ):
+					#print("ADDED COORDS: " + str(new_lat) + " " + str(new_long))
 					coord = misc.GPSCoord( new_lat, new_long )
 					data = misc.Data( profile.getNextDataID(), new_time, 0.0 )
+					count = 0
 
 					profile.addNewUnexaminedLocation( coord, data )
 		print("LEYLINES: finished position message")
