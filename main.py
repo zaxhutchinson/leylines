@@ -423,9 +423,25 @@ class Leylines:
 		msg.rstrip('\n')
 		for k,v in self.loaded_profiles.items():
 			if (k == msg[0]):
+				msg = ""
 				stats = v.getCurrentDefconLevel()
+				if(stats < 3):
+					msg += "0 "
+				elif(stats < 7):
+					msg += "1 "
+				else:
+					msg += "2 "
+
+				if(v.getIsTracking()):
+					msg += "TRUE "
+				else:
+					msg += "FALSE "
+				
+				# These are not supported presently by client
+				msg += "0 FALSE\n"
+
 				v.setTimeStampOfLastMessage()
-				conn.sendall(config.OK_MSG)
+				conn.sendall(msg)
 				#conn.sendall("Current defcon level is: " + str(str_stats))
 				
 	
@@ -446,6 +462,7 @@ class Leylines:
 			if(uid == userid):
 
 				found_uid = True
+				v.setTimeStampOfLastMessage()
 
 				contact1 = profile.Contact()
 				contact2 = profile.Contact()
@@ -525,6 +542,7 @@ class Leylines:
 		profile = self.getProfile(userid)
 
 		if( profile != None ):
+			v.setTimeStampOfLastMessage()
 			new_lat = 0.0
 			new_long = 0.0
 			new_time = 0.0

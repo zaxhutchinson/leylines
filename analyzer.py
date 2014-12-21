@@ -329,8 +329,24 @@ def friendCheck( profile, friend_profile ):
 			profile.setCurrentDefconLevel( 0 )
 
 def checkDisconnectStatus( profile ):
-	None
 
+	if( profile.getIsTrackingDisconnect() ):
+		
+		return
+
+	last_connection = profile.getTimeStampOfLastMessage()
+
+	max_time = time.time() - profile.getMaxDisconnectTime()
+
+	if( (max_time > last_connection) ):
+
+		for contact in profile.getDefconContactList():
+
+			if((contact.last_alert_time_stamp + profile.getAlertFrequency()) <= time.time()):
+
+				alert.send_alert( contact.addr, contact.msg )
+
+				contact.last_alert_time_stamp = int( time.time() )
 
 def checkTrackingStatus( profile ):
 
@@ -349,7 +365,7 @@ def checkDefconStatus( profile ):
 		# Send alert and update time stamp
 		if( contact.defcon >= profile.getCurrentDefconLevel() and ((contact.last_alert_time_stamp + profile.getAlertFrequency()) <= now ) ):
 			
-			alert.send_alert( profile.getPassword(), contact.addr, contact.msg )
+			alert.send_alert( contact.addr, contact.msg )
 
 			# We've sent an alert to update the time stamp.
 			contact.last_alert_time_stamp = int( time.time() )

@@ -44,11 +44,9 @@ class Preferences:
 		self.defcon_contact_list = []
 		#self.defcon_alert_freq = 3600 # In secs
 		
-		self.password = 'plan9sucks'
-		
 		self.pref_key_alert_frequency=10800
 		self.pref_key_gps_collect_frequency=300
-		self.pref_key_gps_send_frequency=900
+		self.pref_key_gps_send_frequency=3600
 
 		# Enables/disables all tracker settings
 		self.pref_key_tracker_settings=False
@@ -252,10 +250,14 @@ class Profile:
 	def addContactToDefconContactList(self, contact):
 		self.preferences.defcon_contact_list.append( contact )
 
-	def getPassword(self):
-		return self.preferences.password
-	def setPassword(self, new_password):
-		self.preferences.password = password
+	def getMaxDisconnectTime(self):
+		return self.preferences.pref_key_tracker_response_misses_setting * self.preferences.pref_key_gps_send_frequency
+
+	def getIsTrackingDisconnect(self):
+		return self.preferences.pref_key_tracker_response_setting
+	def setIsTrackingDisconnect(self, setting):
+		self.preferences.pref_key_tracker_response_setting = setting
+
 	# ===============================================================
 	# STATUS GET/SET
 	def getCurrentUnknownDistance(self):

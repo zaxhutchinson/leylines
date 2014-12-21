@@ -1,20 +1,21 @@
-
 import smtplib #the python class for smtp
+from email.mime.text import MIMEText
 
-def send_alert(GMAIL_PASSWORD, recipients, message):
-    try:
-        session = smtplib.SMTP('smtp.gmail.com', 587)   #creates new instance with gmail mobile smtp server
-        session.ehlo()  #virtual handshake with server
-        session.starttls()  #puts into TLS mode (aka encryption)
-        session.ehlo()  #typically don't need to recall this but it only worked in plan9 when I did, some users suggest it
-        session.login('leylinesapp@gmail.com', GMAIL_PASSWORD)
-        session.sendmail('leylinesapp@gmail.com', recipients, message)
-        session.quit()
-        print "SENT ALERT"
-    except:
-        print "COULD NOT SEND ALERT"
+def send_alert(recipients, message):
+	try:
+		msg = MIMEText(message)
+		me = 'leylines@leylines.duckdns.org'
+		# me == the sender's email address
+		# you == the recipient's email address
+		msg['Subject'] = 'LEYLINES ALERT'
+		msg['From'] = me
+		msg['To'] = recipients
+		# Send the message via our own SMTP server, but don't include the
+		# envelope header.
+		s = smtplib.SMTP(smtp)
+		s.sendmail(me, [recipients], msg.as_string())
+		s.quit()
+		print("SENT ALERT")
+	except:
+		print("COULD NOT SEND ALERT")
 
-#'recipients' can be either a list or a string, if it is a list then it will be sent as a group email
-#   if you want individual emails you can for loop through the list and call the .sendmail function
-#'message' is simply the body of the message
-#   however, you can format it so the gmail smtp server translates it to html and distinguishes the subject from the body
