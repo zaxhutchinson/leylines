@@ -1,0 +1,28 @@
+-----------------------------------------
+Leylines Server Installation Instructions
+-----------------------------------------
+
+Requirements:
+- Python 2.5 or higher (not compatible with 3.x)
+- Linux or Plan 9 server
+
+Install
+[1] Clone the repo onto the server.
+[2] Default port for leylines is defined in config.py as 65006.
+	If changed, you must alter client to match.
+
+Start
+[1] To start leylines server type: python main.py
+	RECOMMENDED:
+	(add '-d' command line arg to get debug printing to console)
+
+
+Stop
+[1] To stop leylines server, you must send a die message. You can
+	do this locally or remotely with the stop.sh script:
+	
+	'./stop.sh [address] [port]
+
+	e.g. (if running locally) ./stop.sh localhost 65006
+
+	This will send the message to the server to cease all operations.
