@@ -8,10 +8,10 @@ Server side
 [client is in LeyLinesClient github repo]
 
 Contributors:
-	Tamel Nash
-	Cameron Rivera
-	Travis Geeting
-	Zachary Hutchinson
+* Tamel Nash
+* Cameron Rivera
+* Travis Geeting
+* Zachary Hutchinson
 
 -- Goal --
 
