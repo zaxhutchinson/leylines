@@ -102,7 +102,7 @@ class Leylines:
 			# previously went awry, load profile unlocked.
 			profile.unlock()
 
-			print(profile.tree_as_list[0])
+			#print(profile.tree_as_list[13])
 			# Initialize a new tree with the original first coordinate
 			profile.tree = quadtree.QuadTree( profile.tree_as_list[0][0], profile.tree_as_list[0][1] )
 
@@ -542,12 +542,14 @@ class Leylines:
 		profile = self.getProfile(userid)
 
 		if( profile != None ):
-			v.setTimeStampOfLastMessage()
+			profile.setTimeStampOfLastMessage()
 			new_lat = 0.0
 			new_long = 0.0
 			new_time = 0.0
 			count = 0
 			for line in items:
+				if(len(line) == 0):
+					continue
 				if( count == 0 ):
 					new_lat = float( line )
 					count += 1
@@ -565,6 +567,7 @@ class Leylines:
 					count = 0
 
 					profile.addNewUnexaminedLocation( coord, data )
+		conn.sendall("OK\n")
 		print("LEYLINES: finished position message")
 
 

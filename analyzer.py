@@ -173,6 +173,7 @@ def examineCurrentPath( profile, log ):
 
 	length = len(profile.current_path)
 	print("LEN CURRENT PATH: " + str(length))
+	print("LEN UNKNOWN PATH: " + str(len(profile.unexamined_path)))
 
 	if(length > 0):
 
@@ -183,7 +184,7 @@ def examineCurrentPath( profile, log ):
 
 		# Get the last location we added to the current path
 		last_loc = profile.getCurrentPathNewestLocation()
-		if(last_loc != None):
+		if(last_loc is not None):
 
 			count += 1
 
@@ -266,12 +267,16 @@ def purgeCurrentPathToTree( profile ):
 				purge_to_date = max_purge_to_date
 
 			# Purge everything up to the purge date and dump it into the quadtree.
-			while( (oldest_loc[1].time < purge_to_date) ):
-				profile.dumpLocation(oldest_loc)
+			while( True ):
+				if (oldest_loc[1].time < purge_to_date):
+					profile.dumpLocation(oldest_loc)
 
-				oldest_loc = profile.getCurrentPathOldestLocation()
+					oldest_loc = profile.getCurrentPathOldestLocation()
 
-				if(oldest_loc == None):
+					if(oldest_loc == None):
+						break
+				else:
+					profile.returnOldLocationToPath(oldest_loc)
 					break
 
 	# Above 1 but below threshold:
@@ -282,10 +287,17 @@ def purgeCurrentPathToTree( profile ):
 			purge_to_date = time.time() - config.DAY_IN_SECS
 
 			# Purge everything up to the purge date and dump it into the quadtree.
-			while( oldest_loc[1].time < purge_to_date ):
-				profile.dumpLocation(oldest_loc)
+			while( True ):
+				if( oldest_loc[1].time < purge_to_date ):
+					profile.dumpLocation(oldest_loc)
 
-				oldest_loc = profile.getCurrentPathOldestLocation()	
+					oldest_loc = profile.getCurrentPathOldestLocation()
+
+					if(oldest_loc == None):
+						break
+				else:
+					profile.returnOldLocationToPath(oldest_loc)
+					break
 
 # We check the distance between our last known coord that is either
 # in the current path or last entry into the tree, against our friend's

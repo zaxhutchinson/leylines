@@ -329,6 +329,7 @@ class Profile:
 
 	def rebuildTree(self, tree_as_dict):
 		self.tree.rebuildQuadTree(tree_as_dict)
+		self.dataID = len(tree_as_dict)
 
 	def save(self):
 		output_file = open(self.uid, 'wb')

@@ -53,6 +53,10 @@ class QuadTree:
 
 		for i in range(1, len(tree_as_dic)):
 
+			if i not in tree_as_dic:
+				print("DATAID does not exist: " + str(i))
+				continue
+
 			mid_point = tree_as_dic[i][0]
 
 			data = tree_as_dic[i][1]
@@ -72,7 +76,7 @@ class QuadTree:
 	def flattenTree(self):
 		extracted_data = []
 
-		sub_list = self.flattenQuadTree(self.root, self.current_radius)
+		sub_list = self.flattenQuadTree(self.root, self.getCurrentRadiusInQuads())
 
 		if( len(sub_list) > 0 ):
 			extracted_data.extend(sub_list)
@@ -132,7 +136,7 @@ class QuadTree:
 		return
 
 	def addNewData(self, coord, data):
-		if( (self.addCoord( coord, self.root, self.current_radius, data)) == -2 ):
+		if( (self.addCoord( coord, self.root, self.getCurrentRadiusInQuads(), data)) == -2 ):
 			return False
 		else:
 			return True
@@ -160,7 +164,7 @@ class QuadTree:
 			if( (self.enlargeQuadTree( coord )) == -2 ):
 				return -2
 			else:
-				return self.addCoord( coord, self.root, self.current_radius, data )
+				return self.addCoord( coord, self.root, self.getCurrentRadiusInQuads(), data )
 		# NE
 		elif( which_quad == 1 ):
 			if( quad.ne == None ):
@@ -187,13 +191,13 @@ class QuadTree:
 			return self.addCoord( coord, quad.nw, (radius / 2), data )
 
 	def isKnownCoord(self, coord):
-		if(self.getLeafQuadForCoord(self.root, self.current_radius, coord) == None):
+		if(self.getLeafQuadForCoord(self.root, self.getCurrentRadiusInQuads(), coord) == None):
 			return False
 		else:
 			return True
 
 	def isCoordInLastAddedQuad(self, coord):
-		quad = self.getLeafQuadForCoord( self.root, self.current_radius, coord )
+		quad = self.getLeafQuadForCoord( self.root, self.getCurrentRadiusInQuads(), coord )
 
 		if(quad == self.prev_entry):
 			return True
@@ -241,32 +245,32 @@ class QuadTree:
 
 		if(exterior_quadrant == 1):
 			new_root_top_left = self.getGPSCoordByDirectionAndCourse( 
-				self.root.top_left, self.current_radius, 0 )		
+				self.root.top_left, self.getCurrentRadiusInQuads(), 0 )		
 			new_root_bottom_right = self.getGPSCoordByDirectionAndCourse( 
-				self.root.bottom_right, self.current_radius, 90 )
+				self.root.bottom_right, self.getCurrentRadiusInQuads(), 90 )
 			new_root = Quad( None, new_root_top_left, new_root_bottom_right )
 			new_root.sw = self.root
 		elif(exterior_quadrant == 2):
 			new_root_top_left = self.root.top_left
 			new_lat = self.getGPSCoordByDirectionAndCourse( 
-				self.root.bottom_right, self.current_radius, 90).longitude
+				self.root.bottom_right, self.getCurrentRadiusInQuads(), 90).longitude
 			new_long = self.getGPSCoordByDirectionAndCourse( 
-				self.root.bottom_right, self.current_radius, 180).latitude
+				self.root.bottom_right, self.getCurrentRadiusInQuads(), 180).latitude
 			new_root_bottom_right = GPSCoord( new_lat, new_long )
 			new_root = Quad(None, new_root_top_left, new_root_bottom_right )
 			new_root.nw = self.root
 		elif(exterior_quadrant == 3):
 			new_root_top_left = self.getGPSCoordByDirectionAndCourse( 
-				self.root.top_left, self.current_radius, 270)
+				self.root.top_left, self.getCurrentRadiusInQuads(), 270)
 			new_root_bottom_right = self.getGPSCoordByDirectionAndCourse( 
-				self.root.bottom_right, self.current_radius, 90)
+				self.root.bottom_right, self.getCurrentRadiusInQuads(), 90)
 			new_root = Quad(None, new_root_top_left, new_root_bottom_right )
 			new_root.ne = self.root
 		elif(exterior_quadrant == 4):
 			new_lat = self.getGPSCoordByDirectionAndCourse( 
-				self.root.top_left, self.current_radius, 0).latitude
+				self.root.top_left, self.getCurrentRadiusInQuads(), 0).latitude
 			new_long = self.getGPSCoordByDirectionAndCourse( 
-				self.root.top_left, self.current_radius, 270).longitude
+				self.root.top_left, self.getCurrentRadiusInQuads(), 270).longitude
 			new_root_top_left = GPSCoord( new_lat, new_long )
 			new_root_bottom_right = self.root.bottom_right
 			new_root = Quad(None, new_root_top_left, new_root_bottom_right )
@@ -470,7 +474,7 @@ class QuadTree:
 
 	def isPointInTree(self, coord, container_quad):
 		
-		return self.isPointInTree(coord, self.root, self.current_radius, container_quad)
+		return self.isPointInTree(coord, self.root, self.getCurrentRadiusInQuads(), container_quad)
 
 	def isPointInTree(self, coord, quad, radius):
 		subquad = getGPSCoordForCoord(coord, quad)

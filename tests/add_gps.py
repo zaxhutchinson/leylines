@@ -4,20 +4,23 @@ import socket
 
 stop_msg = '666\nIAmCompletelySurroundedByNoBeer'
 init_msg = 'I\n1234567890\n40.765411\n-73.993610\n1'
-pos_msg = 'G\n1234567890'
+pos_msg = ""
 
-f = open('zac_path.path','r')
-locations = []
-time = 0
-take_five = 300
+f = open('gps_add_path.path','r')
 for line in f:
-	line = line.strip()
-	gps = line.split(',')
-	pos_msg += ('\n' + gps[0])
-	pos_msg += ('\n' + gps[1])
-	pos_msg += ('\n' + str(time))
-	time += take_five
+	pos_msg += (line)
 f.close()
+#locations = []
+#time = 0
+#take_five = 300
+#for line in f:
+#	line = line.strip()
+#	gps = line.split(',')
+#	pos_msg += ('\n' + gps[0])
+#	pos_msg += ('\n' + gps[1])
+#	pos_msg += ('\n' + str(time))
+#	time += take_five
+#f.close()
 
 #g = open('gps_add_path.path', 'w')
 #g.write(pos_msg)
