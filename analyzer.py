@@ -64,11 +64,13 @@ def examineNewLocation( profile, log ):
 	# if someone's app continues to update the queue with GPS coords. 
 	count = 0
 
-	# Process a max of ten unexamined locations
-	while( ( len(profile.unexamined_path) > 0 ) and count < 100):
+	# Process a max of twenty unexamined locations before letting another
+	# profile have a turn.
+	while( ( len(profile.unexamined_path) > 0 ) and count < 20):
 
 		log.write("#######################################\n")
 
+		# Get the oldest location in the queue
 		new_loc = profile.unexamined_path.popleft()
 		
 		# Get path state (either 0 or 1)
@@ -78,17 +80,20 @@ def examineNewLocation( profile, log ):
 		# from nearest familiar location.
 		state_of_path = profile.isKnownCoord(new_loc[0])
 
-		# Add to current path
-		# profile.popUnexaminedToCurrent(state_of_path)
-
+		# Total deviation represents this locations "badness" per the current
+		# tree data.
 		total_deviation = 0.0
 
 		# We have been in this location before
 		if(state_of_path == 0):
+
+			# Reset total unknown distance and time on unknown path.
 			profile.setUnknownDistance(0.0)
 			profile.setUnknownPathTime(new_loc[1].time)
 
+		# We've never been here before.
 		else:
+
 			# How far is this coordinate from a known location?
 			distance_to_known_location = profile.getDistanceToKnownLocation(new_loc[0])
 
@@ -100,8 +105,10 @@ def examineNewLocation( profile, log ):
 			# Get previous location added to current path
 			previous_location = profile.getCurrentPathNewestLocation()
 			
+			# We need to find the previously handled coordiate, which is
+			# either the last one added to the current path or the last one
+			# added to the quadtree.
 			prev_coord = None
-
 			if(previous_location != None):
 				# Snag the prev_coord
 				#log.write("TAKEN FROM CUR PATH\n")
@@ -114,6 +121,7 @@ def examineNewLocation( profile, log ):
 				# Get the last coord added to the quad tree.
 				prev_coord = profile.getLastCoordInQuadTree()
 
+			# Something went wrong...
 			if(prev_coord == None):
 				raise
 
@@ -150,43 +158,49 @@ def examineNewLocation( profile, log ):
 			# Total possible weight when raw_deviations total 1.0
 			total_weight = profile.getWeightDistanceToKnownQuad() + profile.getWeightDistanceOfUnknownPath() + profile.getWeightTimeOnUnknownPath()
 			
+			# Find total deviation.
 			total_deviation = (deviation_relative_distance + deviation_total_distance + deviation_total_time) / total_weight
 
 			log.write("TOTAL DEVIATION: " + str(total_deviation) + "\n")
 			log.write("CURRENT DEFCON LEVEL: " + str(profile.getCurrentDefconLevel()) + "\n")
 
+			# Assign the deviation to this location
 			new_loc[1].deviation = total_deviation
 
+		# This location has now been examined, add to current path.
 		profile.appendToCurrentPathFromWhole( new_loc )
-
-		# Unlock Queue
-		# profile.unexamined_path.task_done()
 
 		# Last thing
 		count += 1
 
+	# Finally, if the unexamined path is now empty, the profile
+	# has been updated.
 	if( len(profile.unexamined_path) == 0 ):
 		profile.updated = False
 
- 			
+
+# Examine Current Path:
+# Looks over a certain number of locations stored in the current
+# path and averages their deviations to come up with a danger level.
+# Currently, the number looked at is determined by the GPSSendFrequency,
+# but should be refined in the future, getting its own preference.
+# The send frequency does however provide a nice starting point.
 def examineCurrentPath( profile, log ):
 
+	# If there is something in the current path...
 	length = len(profile.current_path)
-	print("LEN CURRENT PATH: " + str(length))
-	print("LEN UNKNOWN PATH: " + str(len(profile.unexamined_path)))
+	#print("LEN CURRENT PATH: " + str(length))
+	#print("LEN UNKNOWN PATH: " + str(len(profile.unexamined_path)))
 
 	if(length > 0):
 
 		# Where we'll store location's when we pull them off the path
 		temp_deque = deque()
 
-		count = 0
-
 		# Get the last location we added to the current path
 		last_loc = profile.getCurrentPathNewestLocation()
+		
 		if(last_loc is not None):
-
-			count += 1
 
 			temp_deque.append(last_loc)
 
@@ -197,22 +211,23 @@ def examineCurrentPath( profile, log ):
 			# and the time of the present element we're inspecting is
 			# is not older than max_time
 			while( True ):
+
 				#Get next oldest location
 				last_loc = profile.getCurrentPathNewestLocation()
+				
 				if(last_loc == None):
 					break
+				
 				# If it falls within the GPS send time...
 				if(last_loc[1].time > max_time):
-					count += 1
 
 					# Add it to the temp queue
 					temp_deque.append(last_loc)
 				
+				# Else throw it back on the current path.
 				else:
 					profile.appendToCurrentPathFromWhole(last_loc)
 					break
-
-		print("TEMP_DEQUE = " + str(count))
 		
 		# Non-local storage for the loop
 		number_inspected = 0
@@ -221,21 +236,24 @@ def examineCurrentPath( profile, log ):
 		# For everything newer than last time - GPS send freq
 		# Accumulate and add back to the current path in order
 		while( len(temp_deque) > 0 ):
+
 			loc = temp_deque.popleft()
 
 			number_inspected += 1
+			
 			total_deviation += loc[1].deviation
 
 			profile.appendToCurrentPathFromWhole(loc)
 
+		#print("DEVIATION: " + str(total_deviation) + "|" + str(number_inspected))
+		
 		# Use what we found to calculate newest danger level
-
-		print("DEVIATION: " + str(total_deviation) + "|" + str(number_inspected))
-
+		# And update defcon
 		if(number_inspected > 0):
+			
 			profile.setCurrentDangerLevel( float(total_deviation) / float(number_inspected) )
 
-			print("DANGER_LEVEL: " + str(profile.getCurrentDangerLevel()))
+			#print("DANGER_LEVEL: " + str(profile.getCurrentDangerLevel()))
 
 			profile.updateDefconLevel()
 
@@ -243,6 +261,8 @@ def examineCurrentPath( profile, log ):
 
 
 # Remove older additions from the current path depending on the current defcon level.
+# TODO: Need to differentiate how current path is purged when defcon
+#	is very low vs slightly raised.
 def purgeCurrentPathToTree( profile ):
 
 	# If the current defcon level is above the defcon threshold, do not
@@ -256,13 +276,16 @@ def purgeCurrentPathToTree( profile ):
 	elif(profile.getCurrentDefconLevel() < 1):
 		
 		oldest_loc = profile.getCurrentPathOldestLocation()
+
 		if(oldest_loc != None):
+			
 			purge_to_date = oldest_loc[1].time + profile.getGPSSendFrequency()
 
 			# The newest date we want to purge is the present time minus
 			# the GPS Send Frequency. If purge_to_date is more recent than that
 			# just the max.
 			max_purge_to_date = (int(time.time()) - profile.getGPSSendFrequency() )
+			
 			if(purge_to_date > max_purge_to_date ):
 				purge_to_date = max_purge_to_date
 
@@ -304,10 +327,11 @@ def purgeCurrentPathToTree( profile ):
 # profile. If we're within friend range, we artificially set the defcon
 # to 0. This does not change the danger level or deviation associated
 # with each entry into the current path.
+# TODO: Log who you were with when this triggered.
 def friendCheck( profile, friend_profile ):
 
 	size_cur_path = len(profile.current_path)
-	size_cur_friend_path = len(profile.current_path)
+	size_cur_friend_path = len(friend_profile.current_path)
 
 	last_known_coord = None
 	last_known_friend_coord = None
@@ -340,18 +364,28 @@ def friendCheck( profile, friend_profile ):
 
 			profile.setCurrentDefconLevel( 0 )
 
+# Handles the disconnect check on a profile
+# The user sets max missed sends preference. This is multiplied by
+# the user's GPSSendFrenquency to come up with a max time span
+# of silence from the client. If the server does not hear from the client
+# before this time, an alert is generated.
 def checkDisconnectStatus( profile ):
 
+	# If the user does not want to track disconnects, return
 	if( profile.getIsTrackingDisconnect() ):
 		
 		return
 
+	# When was the last message sent from client?
 	last_connection = profile.getTimeStampOfLastMessage()
 
+	# What is the max time we should have heard from the client?
 	max_time = time.time() - profile.getMaxDisconnectTime()
 
+	# Have we crossed max time?
 	if( (max_time > last_connection) ):
 
+		# Send alerts to contacts and update alert time.
 		for contact in profile.getDefconContactList():
 
 			if((contact.last_alert_time_stamp + profile.getAlertFrequency()) <= time.time()):
@@ -360,12 +394,16 @@ def checkDisconnectStatus( profile ):
 
 				contact.last_alert_time_stamp = int( time.time() )
 
+# Not implemented.
 def checkTrackingStatus( profile ):
 
 	if( not profile.getIsTracking() ):
 		None
 
+# Checks Defcon Status and sends an alert if the defcon level for this
+# contact has been reached.
 def checkDefconStatus( profile ):
+
 	defcon_contacts = profile.getDefconContactList()
 
 	now = int( time.time() )

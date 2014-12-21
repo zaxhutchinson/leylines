@@ -1,3 +1,16 @@
+################################################################
+# ley_profile.py
+#
+# The user's profile class and other profile specific classes.
+#
+# When new GPS locations come into the server for a specific client
+# they are added first to the unexamined path. The analyzer on its
+# next run, calculates a new deviation and adds them to the current_path.
+# This is done to keep the quad tree clean, i.e. only containing
+# locations that have been determined to be "ok".
+#
+#
+################################################################
 import math
 import pickle
 import sys
@@ -9,60 +22,65 @@ import misc
 import alignment
 import config
 
-
+# A contact for defcon alerts.
 class Contact:
 	def __init__(self, typ = "email", addr="", defcon=10):
+		# Email or phone number?
 		self.typ = typ
+
+		# Address (email or phone)
 		self.addr = addr
+
+		# Defcon level at which the contact should be alerted.
 		self.defcon = defcon
+
+		# If the user was alerted, when? So we don't
+		# keep sending alerts too often.
 		self.last_alert_time_stamp = 0
 
-# The user's preferences
-# NOTE:
-#	-AND/OR relationships?
+# The user's preferences:
+# Stores all the preferences created by the user.
 class Preferences:
 	def __init__(self):
 		# The average threshold of all contacts
 		self.average_defcon_threshold = 5.0
 
-		#self.max_unknown_distance = 0.0
-		#self.max_distance_to_known_quad = 0.0
-		#self.max_time_on_unknown_path = 0.0
+		# Lack of movement threshold and importance
 		self.max_time_unmoved = 0.0
-
-		#self.weight_max_unknown_distance = 0
-		#self.weight_max_distance_to_known_quad = 0
-		#self.weight_max_unknown_time_elapsed = 0
 		self.weight_max_time_unmoved = 0
 
-		#self.alert_freq = 0.0
-		#self.gps_collection_freq = 0.0
-		#self.gps_send_freq = 0.0
-
+		# Friend list, of userids
 		self.friend_list = []
 
+		# Contact list
 		self.defcon_contact_list = []
-		#self.defcon_alert_freq = 3600 # In secs
 		
+		# How often is the client logging and sending GPS data
+		# How often should we send an alert when a threshold is reached.
 		self.pref_key_alert_frequency=10800
 		self.pref_key_gps_collect_frequency=300
 		self.pref_key_gps_send_frequency=3600
 
 		# Enables/disables all tracker settings
+		# How long until this sets off an alert
 		self.pref_key_tracker_settings=False
-		# Enables/disables inactivity tracking
-		self.pref_key_tracker_inactive_setting=False
-		self.pref_key_tracker_inactive_duration_setting=604800
 		self.pref_key_tracker_disabled_duration_setting=3600
 
+		# Enables/disables inactivity tracking
+		# Inactivity alert theshold
+		self.pref_key_tracker_inactive_setting=False
+		self.pref_key_tracker_inactive_duration_setting=604800
+
+		# Multiplier for how long to go without messages
+		# from the client without sending alert
 		self.pref_key_tracker_response_setting=False
 		self.pref_key_tracker_response_misses_setting=3
-	
 		self.pref_key_tracker_settings_alert=""
 
 		self.pref_key_lifestyle_setting=0
 		self.pref_key_sensitivity_setting=0
 
+		# Low battery alert
 		self.pref_key_battery_settings=False
 		self.pref_key_battery_level_settin=20
 		self.pref_key_battery_level_alert=""
@@ -80,12 +98,14 @@ class Preferences:
 		self.pref_key_distance_deviation_total_setting=1000
 		self.pref_key_distance_deviation_total_alert=""
 		
+		# Location specific alert settings
 		self.pref_key_location_settings=False
 		self.pref_key_location_importance=10
 		self.pref_key_location_distance_setting=1000
 		self.pref_key_location_time_setting=3600
 		self.pref_key_location_settings_alert=""
 
+		# Time alert settings.
 		self.pref_key_time_settings=False
 		self.pref_key_time_importance=10
 		self.pref_key_time_deviation_setting=10800
@@ -93,6 +113,9 @@ class Preferences:
 		
 		self.pref_key_tracker_disabled_setting=False
 
+		#############################################
+		# PHONE SETTINGS THAT ARE STORED DIFFERENTLY
+		# SERVER SIDE. HERE FOR REFERENCE ONLY
 		#pref_key_contact3_alert_setting=3
 		#pref_key_contact2_alert_setting=3
 		#pref_key_contact1_alert_setting=3
@@ -104,27 +127,42 @@ class Preferences:
 		#pref_key_contact_self_setting=false
 		#pref_key_contact2_type_setting=email
 		#pref_key_advanced_settings=false
-
-
+		############################################
 
 # The status of the user
 class Status:
 	def __init__(self):
+		# Current Defcon level
 		self.current_defcon = 0
+
+		# Any time defcon changes, we store it and the time.
 		self.defcon_history = deque(( self.current_defcon,int(time.time()) ))
+		
+		# Total distance of current unknown path
 		self.unknown_path_total_distance = 0.0
+
+		# When were we in a last known location?
 		self.time_stamp_last_known_location = 0.0
+		
+		# Current danger level
 		self.danger_level = 0.0
+
 		#True if the user is being tracked. False otherwise.
 		self.isTracking = True 
+		
 		#Saves the time that the tracker was disabled.
 		#Used to determine how long the tracker was disabled.
 		self.time_Disabled = 0.0
 
+		# When did we receive the last message from the client
 		self.timestamp_last_message = time.time()
 
+		# Have we sent an alert?
 		self.alert_has_been_sent = False
 
+	# Updates the Defcon level
+	# TODO: Change name of function, is a helper to the
+	# function updateDefcon below
 	def getDefconForDangerLevel(self):
 		
 		defcon = 0
@@ -152,6 +190,8 @@ class Status:
 
 		return defcon
 
+	# Call to update the defcon level based on the current
+	# danger_level.
 	def updateDefcon(self):
 		tmp_defcon = self.current_defcon
 
@@ -162,9 +202,11 @@ class Status:
 			self.current_defcon = tmp_defcon
 			self.defcon_history.append( (self.current_defcon, int(time.time()) ) )
 
-
+# The user profile class
 class Profile:
 	def __init__(self, uid, coord, data, first_name="Edmund", last_name="Blackadder"):
+		
+		# User ID, name
 		self.uid = uid
 		self.first_name = first_name
 		self.last_name = last_name
@@ -173,17 +215,25 @@ class Profile:
 		# data entry done on profile creation
 		self.dataID = 1
 
+		# The quadtree and the flattened tree. NOTE: rename tree_as_list
 		self.tree_as_list = {}
 		self.tree = quadtree.QuadTree(coord, data)
 
+		# Preferences object
 		self.preferences = Preferences()
 
+		# The current path and unexamined path.
 		self.current_path = deque()
 		self.unexamined_path = deque()
 
+		# Status object
 		self.status = Status()
+		
+		# Has the profile been updated, i.e. should it be
+		# examined by the analyzer?
 		self.updated = True
 
+		# When updating the dataID, we need to lock the profile.
 		self.locked = False
 
 	# ===============================================================
@@ -306,6 +356,10 @@ class Profile:
 	def setTimeStampOfLastMessage(self):
 		self.status.timestamp_last_message = time.time()
 
+	#############################################################
+	# Profile specific functions
+
+	# Atomic function to get and update dataID
 	def getNextDataID(self):
 		while(self.isLocked()):
 			None
@@ -315,6 +369,7 @@ class Profile:
 		self.unlock()
 		return next_data_id
 
+	# We don't want to save the quadtree to disk
 	def __getstate__(self):
 		state = self.__dict__.copy()
 		del state['tree']
@@ -322,24 +377,28 @@ class Profile:
 	def __setstate__(self, d):
 		self.__dict__.update(d)
 
+	# Save/Load functions
 	@classmethod
 	def load(cls, filename):
 		input_file = open(filename, 'rb')
 		return pickle.load(input_file)
 
+	# Kicks off the process of rebuilding the tree when loaded.
 	def rebuildTree(self, tree_as_dict):
 		self.tree.rebuildQuadTree(tree_as_dict)
 		self.dataID = len(tree_as_dict)
 
+	# Save the profile, but don't keep the flattened
+	# tree in memory. It's written and then disposed of.
 	def save(self):
 		output_file = open(self.uid, 'wb')
 		self.tree_as_list = self.tree.flattenTree()
-		#print("TREE LIST SIZE: " + str(len(self.tree_as_list)) + "\n")
 		pickle.dump(self, output_file)
 		output_file.close()
 		self.tree_as_list.clear()
 		return
 
+	# Locks, etc.
 	def isLocked(self):
 		return self.locked
 	def unlock(self):
@@ -363,26 +422,24 @@ class Profile:
 		contact = Contact(typ, addr, defcon )
 		self.addContactToDefconContactList( contact )
 
-	# Adds the oldest unexamined loc to the current path,
-	# enlarging the tuple to include the state: 0 if not in tree, 1 if it is.
-	#def popUnexaminedToCurrentPath(self, state_of_path):
-	#	loc = self.unexamined_path.popleft()
-	#	self.current_path.append( (loc[0], loc[1], state_of_path) )
-	#	return
+	# Pops and returns the newest location on the current path.
 	def getCurrentPathNewestLocation(self):
 		if(len(self.current_path) > 0):
 			return self.current_path.pop()
 		else:
 			return None
+	# Pops and returns the oldest location on the current path.
 	def getCurrentPathOldestLocation(self):
 		if(len(self.current_path) > 0):
 			return self.current_path.popleft()
 		else:
 			return None
 
+	# Adds old location back to path
 	def returnOldLocationToPath(self, loc):
 		self.current_path.appendleft(loc)
 		return
+	# Adds a new location to path
 	def appendToCurrentPathFromWhole(self, loc):
 		self.current_path.append(loc)
 		return
@@ -400,7 +457,7 @@ class Profile:
 	def dumpLocation(self, loc):
 		self.addNewData(loc[0], loc[1])
 
-
+	# Interface function between profile and tree.
 	def addNewData( self, coord, data ):
 		return self.tree.addNewData( coord, data )
 
