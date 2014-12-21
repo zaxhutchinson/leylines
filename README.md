@@ -23,7 +23,7 @@ Leylines is a tool. We aim to create a product that can be of use in determining
 
 Leylines aims to be as automatic as possible. This means, no user interaction, other than initial setup, is required. We believe in data ownership, meaning this software is not meant for server farms, but is meant for private installation on user owned hardware.
 
-Leylines consists of a server and client side. The server can service multiple clients, but, at present, is not meant to used on a massive scale. Our scope is small--a family, an organization or group of friends--not a small country. We are targeting a self-contained group that remains more or less static. 
+Leylines consists of a server and client side. The server can service multiple clients, but, at present, is not meant to be used on a massive scale. Our scope is small--a family, an organization, or group of friends--not a small country. We are targeting a self-contained group that remains more or less static. 
 
 -- Future --
 
