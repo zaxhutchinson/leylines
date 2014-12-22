@@ -73,6 +73,8 @@ class Leylines:
 		# Create the log directory
 		if not os.path.exists(config.LOG_DIR):
 			os.makedirs(config.LOG_DIR)
+		if not os.path.exists(config.PROFILE_DIR):
+			os.makedirs(config.PROFILE_DIR)
 
 		# Open a log file for errors, etc.
 		self.log_file = open( (config.LOG_DIR + '/leylines_' + str(int(time.time())) + '.log'), 'w')
@@ -102,12 +104,14 @@ class Leylines:
 	# Destructor: needs work, but isn't used presently.
 	def __del__(self):
 		
-		self.storeUIDList()
+		#self.storeUIDList()
 
-		for uid in self.loaded_profiles.keys():
-			self.storeProfile(uid)
+		#for uid in self.loaded_profiles.keys():
+		#	self.storeProfile(uid)
 
-		self.log_file.close()
+		#self.log_file.close()
+
+		None
 
 	# Loads all profiles found in the all_known_uids list
 	def loadAllProfiles(self):
@@ -186,8 +190,8 @@ class Leylines:
 
 	# Retrieve the list of all uids from disk and load.
 	def loadUIDList(self):
-		if(os.path.isfile('uid_list')):
-			f = open('uid_list','r')
+		if(os.path.isfile(config.PROFILE_DIR + '/uid_list')):
+			f = open(config.PROFILE_DIR + '/uid_list','r')
 
 			for uid in f:
 				self.all_known_uids.append(uid.strip())
@@ -197,7 +201,7 @@ class Leylines:
 
 	# Write all uids to disk
 	def storeUIDList(self):
-		f = open('uid_list','w')
+		f = open(config.PROFILE_DIR + '/uid_list','w')
 
 		for uid in self.all_known_uids:
 			f.write(uid + '\n')
@@ -586,6 +590,8 @@ class Leylines:
 				v.setTimeStampOfLastMessage()
 				conn.sendall(msg)
 				#conn.sendall("Current defcon level is: " + str(str_stats))
+
+				return
 				
 
 	# Location message:

@@ -7,18 +7,18 @@ Requirements:
 - Linux or Plan 9 server
 
 Install
-[1] Clone the repo onto the server.
-[2] Default port for leylines is defined in config.py as 65006.
+- Clone the repo onto the server.
+- Default port for leylines is defined in config.py as 65006.
 	If changed, you must alter client to match.
 
 Start
-[1] To start leylines server type: python main.py
+- To start leylines server type: python main.py
 	RECOMMENDED:
 	(add '-d' command line arg to get debug printing to console)
 
 
 Stop
-[1] To stop leylines server, you must send a die message. You can
+- To stop leylines server, you must send a die message. You can
 	do this locally or remotely with the stop.sh script:
 	
 	'./stop.sh [address] [port]
@@ -26,6 +26,10 @@ Stop
 	e.g. (if running locally) ./stop.sh localhost 65006
 
 	This will send the message to the server to cease all operations.
+
+Clean
+- To erase all user profiles, logs and reset the server, you can run
+	the scripts/clean.sh script which will purge everything.
 
 
 -----------------------------------------
@@ -40,6 +44,11 @@ Requirements:
 Installation:	
 - Download .apk file from: FILE LOCATION
 - Selecting the file will ask you to install it. Select 'yes'...obviously.
-- Once installed, 
+
+Run:
+- Click on the settings menu.
+- Fill in the info for userid, host and port of your server. Click OK.
+- The server will respond if account creation was successful.
+
 
 

@@ -34,6 +34,9 @@ DANGER_LEVEL_TIME_BLOCK = 2.0
 # Where logs are stored
 LOG_DIR = 'logs'
 
+# Where profiles are stored
+PROFILE_DIR = 'profiles'
+
 # ACK messages to the client
 OK_MSG = "OK\n"
 KO_MSG = "KO\n"
@@ -53,7 +56,7 @@ ALERT_SUBJECT = 'LEYLINES ALERT'
 # Change port if you wish to bind a different
 # port for leylines.
 HOST = ''
-PORT = 65007
+PORT = 65006
 
 # Message identifiers sent by the client
 MSG_TRACK = 'T'
