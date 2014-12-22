@@ -26,3 +26,20 @@ Stop
 	e.g. (if running locally) ./stop.sh localhost 65006
 
 	This will send the message to the server to cease all operations.
+
+
+-----------------------------------------
+Leylines Client Installation Instructions
+-----------------------------------------
+
+Requirements:
+- Android Device (phone or tablet)
+	- Running 2.3 (Gingerbread) or later (API 9)
+	- Enabled device to accept unknown sources (settings under security)
+	
+Installation:	
+- Download .apk file from: FILE LOCATION
+- Selecting the file will ask you to install it. Select 'yes'...obviously.
+- Once installed, 
+
+

@@ -359,6 +359,10 @@ class Profile:
 	#############################################################
 	# Profile specific functions
 
+	# Get the profiles user id
+	def getUID(self):
+		return self.uid
+
 	# Atomic function to get and update dataID
 	def getNextDataID(self):
 		while(self.isLocked()):

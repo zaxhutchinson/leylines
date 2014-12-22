@@ -536,6 +536,8 @@ class Leylines:
 				# We found on, flip tracking
 				v.flipIsTracking()
 				
+				self.debugger.debugMsg( "LEYLINES: tracking " + str(v.getIsTracking()) + " for profile " + v.getUID() )
+
 				# Update disconnect time stamp
 				v.setTimeStampOfLastMessage()
 				
