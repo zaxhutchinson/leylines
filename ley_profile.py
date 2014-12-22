@@ -384,7 +384,7 @@ class Profile:
 	# Save/Load functions
 	@classmethod
 	def load(cls, filename):
-		input_file = open(filename, 'rb')
+		input_file = open((config.PROFILE_DIR + "/" + filename), 'rb')
 		return pickle.load(input_file)
 
 	# Kicks off the process of rebuilding the tree when loaded.
@@ -395,7 +395,7 @@ class Profile:
 	# Save the profile, but don't keep the flattened
 	# tree in memory. It's written and then disposed of.
 	def save(self):
-		output_file = open(self.uid, 'wb')
+		output_file = open((config.PROFILE_DIR + "/" + self.uid), 'wb')
 		self.tree_as_list = self.tree.flattenTree()
 		pickle.dump(self, output_file)
 		output_file.close()
