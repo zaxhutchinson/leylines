@@ -560,14 +560,16 @@ class Leylines:
 	# TODO: Message to phone needs improvement.
 	def rec_refresh(self, msg, conn, addr):
 
-		msg.strip('\n')
+		msg.split('\n')
+
+		print(str(len(msg)))
 
 		self.debugger.debugMsg("LEYLINES: refreshing profile " + msg)
 		
 		# Look for the profile in the loaded list, if we find it
 		# construct a message the app expects.
 		for k,v in self.loaded_profiles.items():
-
+			
 			if (k == msg):
 
 				message = ""
@@ -575,11 +577,11 @@ class Leylines:
 				stats = v.getCurrentDefconLevel()
 
 				if(stats < 3):
-					message += "0 "
+					message += "NONE "
 				elif(stats < 7):
-					message += "1 "
+					message += "MODERATE "
 				else:
-					message += "2 "
+					message += "HIGH "
 
 				if(v.getIsTracking()):
 					message += "TRUE "
@@ -587,7 +589,9 @@ class Leylines:
 					message += "FALSE "
 				
 				# These are not supported presently by client
-				message += "0 FALSE\n"
+				message += "NONE FALSE\n"
+
+				print("HERE")
 
 				v.setTimeStampOfLastMessage()
 				conn.sendall(message)
