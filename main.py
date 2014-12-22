@@ -568,28 +568,30 @@ class Leylines:
 
 			if (k == msg[0]):
 
-				msg = ""
+				message = ""
 
 				stats = v.getCurrentDefconLevel()
 
 				if(stats < 3):
-					msg += "0 "
+					message += "0 "
 				elif(stats < 7):
-					msg += "1 "
+					message += "1 "
 				else:
-					msg += "2 "
+					message += "2 "
 
 				if(v.getIsTracking()):
-					msg += "TRUE "
+					message += "TRUE "
 				else:
-					msg += "FALSE "
+					message += "FALSE "
 				
 				# These are not supported presently by client
-				msg += "0 FALSE\n"
+				message += "0 FALSE\n"
 
 				v.setTimeStampOfLastMessage()
-				conn.sendall(msg)
+				conn.sendall(message)
 				#conn.sendall("Current defcon level is: " + str(str_stats))
+
+				self.debugger.debugMsg("LEYLINES: refresh msg " + message)
 
 				return
 				

@@ -13,7 +13,10 @@ else
 		then
 			if [ -f "$PWD/profiles/$1" ]
 			then
-				rm "$PWD/scripts/$1"
+				rm "$PWD/profiles/$1"
+				# DOES NOT WORK...might delete wrong things.
+				sed "/$1/d" "$PWD/profiles/uid_list"
+				sed "/^ *$/d" "$PWD/profiles/uid_list"
 			fi
 		fi
 	done <$PWD/profiles/uid_list
