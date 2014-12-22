@@ -56,7 +56,7 @@ ALERT_SUBJECT = 'LEYLINES ALERT'
 # Change port if you wish to bind a different
 # port for leylines.
 HOST = ''
-PORT = 65006
+PORT = 65007
 
 # Message identifiers sent by the client
 MSG_TRACK = 'T'
