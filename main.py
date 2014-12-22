@@ -560,13 +560,15 @@ class Leylines:
 	# TODO: Message to phone needs improvement.
 	def rec_refresh(self, msg, conn, addr):
 
-		msg.rstrip('\n')
+		msg.strip('\n')
+
+		self.debugger.debugMsg("LEYLINES: refreshing profile " + msg)
 		
 		# Look for the profile in the loaded list, if we find it
 		# construct a message the app expects.
 		for k,v in self.loaded_profiles.items():
 
-			if (k == msg[0]):
+			if (k == msg):
 
 				message = ""
 
