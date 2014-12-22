@@ -38,6 +38,15 @@ LOG_DIR = 'logs'
 OK_MSG = "OK\n"
 KO_MSG = "KO\n"
 
+# Alert from email address
+# You will want to edit this so that emails originate
+# from an account that can receive returns, replies, etc.
+ALERT_FROM_EMAIL_ADDRESS = 'leylines@leylines.duckdns.org'
+
+# The subject of alert messages.
+# TODO: should be an editable field on the app.
+ALERT_SUBJECT = 'LEYLINES ALERT'
+
 ########################################
 ### DO NOT CHANGE VALUES ONCE IN USE ###
 
