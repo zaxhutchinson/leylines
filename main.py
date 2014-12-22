@@ -562,8 +562,6 @@ class Leylines:
 
 		msg.split('\n')
 
-		print(str(len(msg)))
-
 		self.debugger.debugMsg("LEYLINES: refreshing profile " + msg)
 		
 		# Look for the profile in the loaded list, if we find it
@@ -590,8 +588,6 @@ class Leylines:
 				
 				# These are not supported presently by client
 				message += "NONE FALSE\n"
-
-				print("HERE")
 
 				v.setTimeStampOfLastMessage()
 				conn.sendall(message)
