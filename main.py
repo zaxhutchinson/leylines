@@ -632,7 +632,7 @@ class Leylines:
 		# from the phone come in a random order (quick or android prefs)
 		# So we have to handle them as they come.
 		for k,v in self.loaded_profiles.items():
-			if(uid == userid):
+			if(k == userid):
 
 				# We found a profile, we'll break when done updating.
 				found_uid = True
