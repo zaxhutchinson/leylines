@@ -29,6 +29,15 @@ Leylines consists of a server and client side. The server can service multiple c
 
 Our present and future goals are to refine the path prediction algorithm that isolates deviations from the norm, and to cross-reference that with contextual data and/or destination prediction. What we hope to achieve is something that keeps an updated picture of a person or object's normal movements in context to its environment and schedule through manually or automatically created tags.
 
+-- TO-DO List --
+
+These are things lacking from the project that are basic concerns and will be added before the project is expanded. In no particular order unless mentioned.
+
+* Encryption: Top of the list.
+* Expand client status display
+* Expand server side interface. A real interactive program would be nice. Maybe in ncurses.
+* 
+
 -- Version History --
 
 v0.01: Infrastructure and proof of concept. 

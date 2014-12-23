@@ -539,19 +539,45 @@ class Leylines:
 				
 				# We found on, flip tracking
 				v.flipIsTracking()
+
+				message = self.contructStatusMsg(v)
+
+				conn.sendall(message)
 				
 				self.debugger.debugMsg( "LEYLINES: tracking " + str(v.getIsTracking()) + " for profile " + v.getUID() )
 
 				# Update disconnect time stamp
 				v.setTimeStampOfLastMessage()
 				
-				conn.sendall(config.OK_MSG)
-				
 				return
 		
 		# We didn't find the profile, KO
 		conn.sendall(config.KO_MSG)		
 		return
+
+	def constructStatusMsg(self, profile):
+		
+		message = ""
+
+		stats = profile.getCurrentDefconLevel()
+
+		if(stats < 3):
+			message += "NONE "
+		elif(stats < 7):
+			message += "MODERATE "
+		else:
+			message += "HIGH "
+
+		if(profile.getIsTracking()):
+			message += "TRUE "
+		else:
+			message += "FALSE "
+		
+		# These are not supported presently by client
+		message += "NONE FALSE\n"
+
+		return message
+
 		
 	# Refresh message
 	# Should return the status of the user who queried it.
@@ -570,24 +596,7 @@ class Leylines:
 			
 			if (k == msg):
 
-				message = ""
-
-				stats = v.getCurrentDefconLevel()
-
-				if(stats < 3):
-					message += "NONE "
-				elif(stats < 7):
-					message += "MODERATE "
-				else:
-					message += "HIGH "
-
-				if(v.getIsTracking()):
-					message += "TRUE "
-				else:
-					message += "FALSE "
-				
-				# These are not supported presently by client
-				message += "NONE FALSE\n"
+				message = self.constructStatusMsg(v)
 
 				v.setTimeStampOfLastMessage()
 				conn.sendall(message)
