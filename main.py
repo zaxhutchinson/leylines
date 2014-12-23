@@ -707,7 +707,7 @@ class Leylines:
 				profile.addContactToDefconContactList( contact3 )
 		
 		else:
-			self.debugger.debugMsg("LEYLINES: profile %d not found" % userid)
+			self.debugger.debugMsg("LEYLINES: profile %s not found" % userid)
 					
 
 		# Send response...
