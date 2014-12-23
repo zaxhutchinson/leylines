@@ -634,82 +634,75 @@ class Leylines:
 		# from the phone come in a random order (quick or android prefs)
 		# So we have to handle them as they come.
 		
-		# Find the profile.
-		profile = self.getProfile(userid)
+		for k,v in self.loaded_profiles.items():
+			if(k == userid):
 
-		# If the profile find was good....
-		if( profile != None ):
+					# We found a profile, we'll break when done updating.
+					found_uid = True
 
-			# We found a profile, we'll break when done updating.
-			found_uid = True
+					# Update time stamp of profile
+					v.setTimeStampOfLastMessage()
 
-			# Update time stamp of profile
-			profile.setTimeStampOfLastMessage()
-
-			# Contact objects.
-			contact1 = profile.Contact()
-			contact2 = profile.Contact()
-			contact3 = profile.Contact()
-	
-			# Read and update prefs.
-			for p in prefs:
-				split_pref = p.split('=')
-				k = split_pref[0]
-				v = split_pref[1]
-
-				if( k == "pref_key_alert_frequency" ):
-					profile.setAlertFrequency( int(v) )
-				elif( k == "pref_key_gps_collect_frequency" ):
-					profile.setGPSCollectionFrequency( int(v) )
-				elif( k == "pref_key_gps_send_frequency" ):
-					profile.setGPSSendFrequency( int(v) )
-				
-				elif( k == "pref_key_distance_deviation_setting"):
-					profile.setMaxDistanceToKnownQuad( int(v) )
-				elif( k == "pref_key_distance_importance" ):
-					profile.setWeightDistanceToKnownQuad( int(v) )
-
-				elif( k == "pref_key_time_deviation_setting" ):
-					profile.setMaxTimeOnUnknownPath( int(v) )
-				elif( k == "pref_key_time_importance" ):
-					profile.setWeightTimeOnUnknownPath( int(v) )
-
-				elif( k == "pref_key_distance_deviation_total_setting" ):
-					profile.setMaxDistanceOfUnknownPath( int(v) )
-				elif( k == "pref_key_distance_total_importance" ):
-					profile.setWeightDistanceOfUnknownPath( int(v) )
-
-				elif( "contact1" in k ):
-					if( k == "pref_key_contact1_type_setting" ):
-						contact1.typ = v
-					elif( k == "pref_key_contact1_info_setting" ):
-						contact1.addr = v
-					elif( k == "pref_key_contact1_alert_setting" ):
-						contact1.defcon = int( v )
-				elif( "contact2" in k):
-					if( k == "pref_key_contact2_type_setting" ):
-						contact2.typ = v
-					elif( k == "pref_key_contact2_info_setting" ):
-						contact2.addr = v
-					elif( k == "pref_key_contact2_alert_setting" ):
-						contact2.defcon = int( v )
-				elif( "contact3" in k):
-					if( k == "pref_key_contact3_type_setting" ):
-						contact3.typ = v
-					elif( k == "pref_key_contact3_info_setting" ):
-						contact3.addr = v
-					elif( k == "pref_key_contact3_alert_setting" ):
-						contact3.defcon = int( v )
-
-				# Store all the contacts
-				profile.addContactToDefconContactList( contact1 )
-				profile.addContactToDefconContactList( contact2 )
-				profile.addContactToDefconContactList( contact3 )
-		
-
+					# Contact objects.
+					contact1 = profile.Contact()
+					contact2 = profile.Contact()
+					contact3 = profile.Contact()
 			
-					
+					# Read and update prefs.
+					for p in prefs:
+						split_pref = p.split('=')
+						k = split_pref[0]
+						v = split_pref[1]
 
+						if( k == "pref_key_alert_frequency" ):
+							profile.setAlertFrequency( int(v) )
+						elif( k == "pref_key_gps_collect_frequency" ):
+							profile.setGPSCollectionFrequency( int(v) )
+						elif( k == "pref_key_gps_send_frequency" ):
+							profile.setGPSSendFrequency( int(v) )
+						
+						elif( k == "pref_key_distance_deviation_setting"):
+							profile.setMaxDistanceToKnownQuad( int(v) )
+						elif( k == "pref_key_distance_importance" ):
+							profile.setWeightDistanceToKnownQuad( int(v) )
+
+						elif( k == "pref_key_time_deviation_setting" ):
+							profile.setMaxTimeOnUnknownPath( int(v) )
+						elif( k == "pref_key_time_importance" ):
+							profile.setWeightTimeOnUnknownPath( int(v) )
+
+						elif( k == "pref_key_distance_deviation_total_setting" ):
+							profile.setMaxDistanceOfUnknownPath( int(v) )
+						elif( k == "pref_key_distance_total_importance" ):
+							profile.setWeightDistanceOfUnknownPath( int(v) )
+
+						elif( "contact1" in k ):
+							if( k == "pref_key_contact1_type_setting" ):
+								contact1.typ = v
+							elif( k == "pref_key_contact1_info_setting" ):
+								contact1.addr = v
+							elif( k == "pref_key_contact1_alert_setting" ):
+								contact1.defcon = int( v )
+						elif( "contact2" in k):
+							if( k == "pref_key_contact2_type_setting" ):
+								contact2.typ = v
+							elif( k == "pref_key_contact2_info_setting" ):
+								contact2.addr = v
+							elif( k == "pref_key_contact2_alert_setting" ):
+								contact2.defcon = int( v )
+						elif( "contact3" in k):
+							if( k == "pref_key_contact3_type_setting" ):
+								contact3.typ = v
+							elif( k == "pref_key_contact3_info_setting" ):
+								contact3.addr = v
+							elif( k == "pref_key_contact3_alert_setting" ):
+								contact3.defcon = int( v )
+
+						# Store all the contacts
+						profile.addContactToDefconContactList( contact1 )
+						profile.addContactToDefconContactList( contact2 )
+						profile.addContactToDefconContactList( contact3 )
+						
 		# Send response...
 		if not found_uid:
 			conn.sendall(config.KO_MSG)
