@@ -623,7 +623,7 @@ class Leylines:
 		self.debugger.debugMsg("LEYLINES: processing preferences message")
 		
 		# Extract userid from message
-		msg_split = msg.split('/n')
+		msg_split = msg.split('\n')
 		userid = msg_split[0]
 		prefs = msg_split[1:]
 
@@ -706,15 +706,17 @@ class Leylines:
 				profile.addContactToDefconContactList( contact2 )
 				profile.addContactToDefconContactList( contact3 )
 		
-		else:
-			self.debugger.debugMsg("LEYLINES: profile %s not found" % userid)
+
+			
 					
 
 		# Send response...
 		if not found_uid:
 			conn.sendall(config.KO_MSG)
+			self.debugger.debugMsg("LEYLINES: profile %s not found" % userid)
 		else:
-			conn.sendall(config.OK_MSG)				
+			conn.sendall(config.OK_MSG)
+			self.debugger.debugMsg("LEYLINES: preferences updated for profile %s " % userid)
 
 	# New position message
 	# Work horse of Leylines. Handles new GPS coods and time stamps
