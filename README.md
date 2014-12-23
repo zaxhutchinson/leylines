@@ -35,9 +35,12 @@ These are things lacking from the project that are basic concerns and will be ad
 
 * Encryption: Top of the list.
 * Expand client status display
-* Expand server side interface. A real interactive program would be nice. Maybe in ncurses.
-* 
+* Expand server side interface to include a fully fledge program (expand scripts).
+* Move away from Plan 9 support...for reasons <i>practical</i>.
+* Visual component via either web, device or server...or all three.
+* Testing, testing, always testing.
+* Expand default settings and explanations.
 
 -- Version History --
 
-v0.01: Infrastructure and proof of concept. 
+v0.01: Infrastructure and Basic functionality. 

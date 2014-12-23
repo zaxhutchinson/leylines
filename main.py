@@ -502,6 +502,8 @@ class Leylines:
 				# Extract coordinate and create Data object
 				coord = misc.GPSCoord( float(info[0]), float(info[1]) )
 				data = misc.Data( 0, int(info[2]), 0.0 )
+
+				self.debugger.debugMsg("LEYLINES: initial GPS [LAT,LON] " + str(coord.latitude) + "," + str(coord.longitude) )
 				
 				# Add userid to all known userids
 				self.all_known_uids.append(userid)
