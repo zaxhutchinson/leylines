@@ -540,7 +540,7 @@ class Leylines:
 				# We found on, flip tracking
 				v.flipIsTracking()
 
-				message = self.contructStatusMsg(v)
+				message = self.constructStatusMsg(v)
 
 				conn.sendall(message)
 				
