@@ -634,14 +634,14 @@ class Leylines:
 		# from the phone come in a random order (quick or android prefs)
 		# So we have to handle them as they come.
 		
-		for k,v in self.loaded_profiles.items():
-			if(k == userid):
+		for uid,profile in self.loaded_profiles.items():
+			if(uid == userid):
 
 					# We found a profile, we'll break when done updating.
 					found_uid = True
 
 					# Update time stamp of profile
-					v.setTimeStampOfLastMessage()
+					profile.setTimeStampOfLastMessage()
 
 					# Contact objects.
 					contact1 = ley_profile.Contact()
@@ -655,26 +655,26 @@ class Leylines:
 						v = split_pref[1]
 
 						if( k == "pref_key_alert_frequency" ):
-							ley_profile.setAlertFrequency( int(v) )
+							profile.setAlertFrequency( int(v) )
 						elif( k == "pref_key_gps_collect_frequency" ):
-							ley_profile.setGPSCollectionFrequency( int(v) )
+							profile.setGPSCollectionFrequency( int(v) )
 						elif( k == "pref_key_gps_send_frequency" ):
-							ley_profile.setGPSSendFrequency( int(v) )
+							profile.setGPSSendFrequency( int(v) )
 						
 						elif( k == "pref_key_distance_deviation_setting"):
-							ley_profile.setMaxDistanceToKnownQuad( int(v) )
+							profile.setMaxDistanceToKnownQuad( int(v) )
 						elif( k == "pref_key_distance_importance" ):
-							ley_profile.setWeightDistanceToKnownQuad( int(v) )
+							profile.setWeightDistanceToKnownQuad( int(v) )
 
 						elif( k == "pref_key_time_deviation_setting" ):
-							ley_profile.setMaxTimeOnUnknownPath( int(v) )
+							profile.setMaxTimeOnUnknownPath( int(v) )
 						elif( k == "pref_key_time_importance" ):
-							ley_profile.setWeightTimeOnUnknownPath( int(v) )
+							profile.setWeightTimeOnUnknownPath( int(v) )
 
 						elif( k == "pref_key_distance_deviation_total_setting" ):
-							ley_profile.setMaxDistanceOfUnknownPath( int(v) )
+							profile.setMaxDistanceOfUnknownPath( int(v) )
 						elif( k == "pref_key_distance_total_importance" ):
-							ley_profile.setWeightDistanceOfUnknownPath( int(v) )
+							profile.setWeightDistanceOfUnknownPath( int(v) )
 
 						elif( "contact1" in k ):
 							if( k == "pref_key_contact1_type_setting" ):
@@ -699,9 +699,9 @@ class Leylines:
 								contact3.defcon = int( v )
 
 						# Store all the contacts
-						ley_profile.addContactToDefconContactList( contact1 )
-						ley_profile.addContactToDefconContactList( contact2 )
-						ley_profile.addContactToDefconContactList( contact3 )
+						profile.addContactToDefconContactList( contact1 )
+						profile.addContactToDefconContactList( contact2 )
+						profile.addContactToDefconContactList( contact3 )
 						
 		# Send response...
 		if not found_uid:
