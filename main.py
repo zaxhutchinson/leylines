@@ -633,9 +633,14 @@ class Leylines:
 		# update preferences. NOTE: Preference key-value pairs
 		# from the phone come in a random order (quick or android prefs)
 		# So we have to handle them as they come.
+<<<<<<< HEAD
 		
 		# Find the profile.
 		profile = self.getProfile(userid)
+=======
+		for k,v in self.loaded_profiles.items():
+			if(uid == userid):
+>>>>>>> parent of 6ea0ed8... Trying to fix preference update issue
 
 		# If the profile find was good....
 		if( profile != None ):
