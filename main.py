@@ -644,9 +644,9 @@ class Leylines:
 					v.setTimeStampOfLastMessage()
 
 					# Contact objects.
-					contact1 = profile.Contact()
-					contact2 = profile.Contact()
-					contact3 = profile.Contact()
+					contact1 = ley_profile.Contact()
+					contact2 = ley_profile.Contact()
+					contact3 = ley_profile.Contact()
 			
 					# Read and update prefs.
 					for p in prefs:
@@ -655,26 +655,26 @@ class Leylines:
 						v = split_pref[1]
 
 						if( k == "pref_key_alert_frequency" ):
-							profile.setAlertFrequency( int(v) )
+							ley_profile.setAlertFrequency( int(v) )
 						elif( k == "pref_key_gps_collect_frequency" ):
-							profile.setGPSCollectionFrequency( int(v) )
+							ley_profile.setGPSCollectionFrequency( int(v) )
 						elif( k == "pref_key_gps_send_frequency" ):
-							profile.setGPSSendFrequency( int(v) )
+							ley_profile.setGPSSendFrequency( int(v) )
 						
 						elif( k == "pref_key_distance_deviation_setting"):
-							profile.setMaxDistanceToKnownQuad( int(v) )
+							ley_profile.setMaxDistanceToKnownQuad( int(v) )
 						elif( k == "pref_key_distance_importance" ):
-							profile.setWeightDistanceToKnownQuad( int(v) )
+							ley_profile.setWeightDistanceToKnownQuad( int(v) )
 
 						elif( k == "pref_key_time_deviation_setting" ):
-							profile.setMaxTimeOnUnknownPath( int(v) )
+							ley_profile.setMaxTimeOnUnknownPath( int(v) )
 						elif( k == "pref_key_time_importance" ):
-							profile.setWeightTimeOnUnknownPath( int(v) )
+							ley_profile.setWeightTimeOnUnknownPath( int(v) )
 
 						elif( k == "pref_key_distance_deviation_total_setting" ):
-							profile.setMaxDistanceOfUnknownPath( int(v) )
+							ley_profile.setMaxDistanceOfUnknownPath( int(v) )
 						elif( k == "pref_key_distance_total_importance" ):
-							profile.setWeightDistanceOfUnknownPath( int(v) )
+							ley_profile.setWeightDistanceOfUnknownPath( int(v) )
 
 						elif( "contact1" in k ):
 							if( k == "pref_key_contact1_type_setting" ):
@@ -699,9 +699,9 @@ class Leylines:
 								contact3.defcon = int( v )
 
 						# Store all the contacts
-						profile.addContactToDefconContactList( contact1 )
-						profile.addContactToDefconContactList( contact2 )
-						profile.addContactToDefconContactList( contact3 )
+						ley_profile.addContactToDefconContactList( contact1 )
+						ley_profile.addContactToDefconContactList( contact2 )
+						ley_profile.addContactToDefconContactList( contact3 )
 						
 		# Send response...
 		if not found_uid:
