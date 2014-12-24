@@ -87,10 +87,10 @@ class Preferences:
 		self.pref_key_battery_importance=0.5
 
 		# MAX DISTANCE TO KNOWN QUAD
-		self.pref_key_distance_settings=False
-		self.pref_key_distance_importance=10
-		self.pref_key_distance_deviation_setting=1000
-		self.pref_key_distance_deviation_alert=""
+		self.pref_key_distance_relative_settings=False
+		self.pref_key_distance_relative_importance=10
+		self.pref_key_distance_relative_deviation_setting=1000
+		self.pref_key_distance_relative_deviation_alert=""
 
 		# MAX TOTAL DISTANCE OF UNKNOWN PATH
 		self.pref_key_distance_total_settings=False
